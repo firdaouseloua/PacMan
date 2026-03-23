@@ -19,7 +19,7 @@ Le code est organisé selon 3 packages :
 * `view` : l'interface graphique
 * `control` : le contrôleur reliant l'interface graphique au modèle
 
-Dans chacuns de ces packages, vous trouverez quelques classes utilitaires qui vous sont fournies et surtout des **interfaces** qui ont servi de base pour l'ensemble des tests. Vous développerez votre jeu en implémentant les interfaces fournies.
+Dans chacun de ces packages, vous trouverez quelques classes utilitaires qui vous sont fournies et surtout des **interfaces** qui ont servi de base pour l'ensemble des tests. Vous développerez votre jeu en implémentant les interfaces fournies.
 
 ## Tests
 
@@ -31,7 +31,7 @@ Les tests sont proposés dans le package `test`, ils sont divisés en 4 parties 
 
 Malgré son apparente simplicité, le jeu PacMan a de très nombreuses subtilités qu'il n'est pas toujours facile de reproduire à l'identique. Nous allons développer le jeu par étape en faisant évoluer au fur et à mesure à la fois le modèle et l'interface graphique (et donc le contrôleur). 
 
-En terme d'évaluation, l'étape 1 sera nécessaire pour la validation du projet (10 / 20) et l'étape 4 voire plus pour la note maximale. L'évaluation est pensé en ces termes : l'objectif est qu'il soit possible pour toutes et tous d'obtenir la moyenne en travaillant de façon sérieuse mais que chacun et chacune se motive et soit récompensé pour aller le plus loin possible.
+En terme d'évaluation, l'étape 1 sera nécessaire pour la validation du projet (10 / 20) et l'étape 4 voire plus pour la note maximale. L'évaluation est pensée en ces termes : l'objectif est qu'il soit possible pour toutes et tous d'obtenir la moyenne en travaillant de façon sérieuse mais que chacun et chacune se motive et soit récompensé pour aller le plus loin possible.
 
 Pour se faire une idée : dès l'étape 1, on aura une interface graphique fonctionnelle. Il faudra attendre l'étape 2 pour avoir un début de "vrai jeu". A la fin de l'étape 3, la différence avec le vrai PacMan sera minime et l'étape 4 permet d'ajouter des subtilités.
 
@@ -127,7 +127,7 @@ Dans le package `control`, vous trouverez les interfaces et classes nécessaires
 * La classe `ForbiddenActionException` représente une exception qui doit être levée lors d'une action interdite (par exemple, une actions sur PacMan alors que le jeu n'est pas commencé)
 * la classe `InterfaceMode`liste des interfaces de jeu possibles. On vous demande d'implémenter le mode `SIMPLE` et le mode `VISUAL`. Le mode simple est un contrôleur *sans* vue. Il permet de tester l'envoie des actions et la réaction du modèle. 
 
-Le contrôleur pourra être créé à l'aide de la méthode statique `getConroller` de l'interface `Controller`. Le rôle de cette méthode est de renvoyer une classe concrète implémentant l'interface en fonction du mode souhaité.
+Le contrôleur pourra être créé à l'aide de la méthode statique `getController` de l'interface `Controller`. Le rôle de cette méthode est de renvoyer une classe concrète implémentant l'interface en fonction du mode souhaité.
 
 **Architecture proposée** : Implémentez une classe `SimpleController` ainsi qu'une classe `VisualController` qui *hérite* de `SimpleController` en rajoutant les éléments spécifiques à la gestion de la vue. 
 
@@ -193,7 +193,7 @@ A chaque appel de la fonction `nextFrame`, l'état du plateau est susceptible de
 
 #### Vitesse et stop
 
-Côté `Actor` et en particulier PacMan, on rajoute aussi quelques fonctionnalités. Plutôt que d'avancer d'un pixel à chaque image, les acteurs auront une vitesse (cela s'applique à tous les acteurs et pas seulement pacman, il faut donc que ce soit implanté dans une classe commune comme `AbstractActor`). La vitesse est donné comme un facteur multiplicatif : si la vitesse est $1$, alors l'acteur avance de 1 pixel à chaque image. Si la vitesse est .5, l'acteur n'avance que d'un 1/2 pixel. Seul les pixels entiers sont affichés à l'image. Quand la vitesse est inférieure à 1, PacMan avancera donc simplement plus lentement.
+Côté `Actor` et en particulier PacMan, on rajoute aussi quelques fonctionnalités. Plutôt que d'avancer d'un pixel à chaque image, les acteurs auront une vitesse (cela s'applique à tous les acteurs et pas seulement pacman, il faut donc que ce soit implanté dans une classe commune comme `AbstractActor`). La vitesse est donnée comme un facteur multiplicatif : si la vitesse est $1$, alors l'acteur avance de 1 pixel à chaque image. Si la vitesse est .5, l'acteur n'avance que d'un 1/2 pixel. Seul les pixels entiers sont affichés à l'image. Quand la vitesse est inférieure à 1, PacMan avancera donc simplement plus lentement.
 
 Concrètement, on gardera à présent la position de l'acteur à l'aide d'une valeur de type `double` et la valeur entière sera juste la valeur tronquée (si la position $x$ de PacMan est 1.6, sa position entière est $1$).
 
@@ -278,7 +278,7 @@ On utilise le mode `FRIGHTENED_END` pour le moment où les fantômes "clignotent
 
 On implémente l'ensemble des fantômes avec leurs spécificités principalement données par leurs différentes cibles. Les explications sur chacun des fantômes sont disponibles dans la section [Meet the Ghost](https://pacman.holenet.info/#Chapter_4). 
 
-Pour des raisons de tests, on permet aussi de désactiver certains fantômes (qui ne seront donc pas créés) avec `disableGhost` (cette fonction sera toujours appelée avant l'initialisation du plateau).
+Pour des raisons de tests, on permet aussi de désactiver certains fantômes (qui ne seront donc pas créés) avec `disableGhost` (cette fonction ne peut être appelée que avant l'initialisation du plateau).
 
 Les positions initiales des fantômes sont les suivantes :
 
