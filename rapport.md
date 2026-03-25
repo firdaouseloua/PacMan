@@ -2,8 +2,10 @@
 
 ## Membres du groupe
 
-*Ecrire vos noms*
+
 Franck Pan
+Firdaous Elouadi
+
 
 ## Introduction
 
