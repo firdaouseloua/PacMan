@@ -1,0 +1,1 @@
+tagSearchIndex = [{"l":"Constant Field Values","h":"","u":"constant-values.html"},{"l":"Serialized Form","h":"","u":"serialized-form.html"},{"l":"Why a separate MazeImpl file?","h":"class fr.upsaclay.bibs.pacman.model.maze.MazeImpl","d":"Section","u":"fr/upsaclay/bibs/pacman/model/maze/MazeImpl.html#why-a-separate-mazeimpl-file--heading"}];updateSearchResults();

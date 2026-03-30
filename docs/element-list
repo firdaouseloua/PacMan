@@ -1,0 +1,6 @@
+fr.upsaclay.bibs.pacman.control
+fr.upsaclay.bibs.pacman.model
+fr.upsaclay.bibs.pacman.model.actors
+fr.upsaclay.bibs.pacman.model.board
+fr.upsaclay.bibs.pacman.model.maze
+fr.upsaclay.bibs.pacman.view
