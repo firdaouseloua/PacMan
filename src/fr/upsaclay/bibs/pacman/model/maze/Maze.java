@@ -137,7 +137,7 @@ public interface Maze {
      * @return an empty PacMan Maze
      */
     static Maze emptyMaze(int width, int height) {
-		throw new UnsupportedOperationException("Not implemented");
+		return new MazeImpl(width, height);
     }
 
     /**
@@ -146,9 +146,39 @@ public interface Maze {
      * @return a PacMan Maze
      */
     static Maze loadFromFile(String fileName) throws FileNotFoundException {
-		throw new UnsupportedOperationException("Not implemented");
+    // Why try-with-resources: ensures the Scanner/file handle is always closed, even on exceptions.
+    try (Scanner sc = new Scanner(new File(fileName))) {
 
+        if (!sc.hasNextInt()) {
+            throw new IllegalArgumentException("Invalid maze file: missing width");
+        }
+        int width = sc.nextInt();
+
+        if (!sc.hasNextInt()) {
+            throw new IllegalArgumentException("Invalid maze file: missing height");
+        }
+        int height = sc.nextInt();
+
+        Tile[][] tiles = new Tile[height][width];
+
+        for (int line = 0; line < height; line++) {
+            for (int col = 0; col < width; col++) {
+                if (!sc.hasNext()) {
+                    throw new IllegalArgumentException(
+                            "Invalid maze file: missing tile at line=" + line + ", col=" + col
+                    );
+                }
+
+                // Why valueOf: keeps the file format aligned with the Tile enum constants (single source of truth).
+                String token = sc.next();
+                tiles[line][col] = Tile.valueOf(token);
+            }
+        }
+
+        // Why return an implementation: Maze is an interface; MazeImpl stores the validated 2D grid internally.
+        return new MazeImpl(tiles);
     }
+}
 
     // Step 2
     // The methods below won't be used / tested before step 2

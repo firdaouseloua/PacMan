@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"fr.upsaclay.bibs.pacman.control"},{"l":"fr.upsaclay.bibs.pacman.model"},{"l":"fr.upsaclay.bibs.pacman.model.actors"},{"l":"fr.upsaclay.bibs.pacman.model.board"},{"l":"fr.upsaclay.bibs.pacman.model.maze"},{"l":"fr.upsaclay.bibs.pacman.view"}];updateSearchResults();
