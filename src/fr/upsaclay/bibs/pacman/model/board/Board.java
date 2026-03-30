@@ -62,9 +62,15 @@ public interface Board {
      * @return the board
      */
     static Board createBoard(GameType type) {
-		throw new UnsupportedOperationException("Not implemented");
+        switch (type) {
+            case CLASSIC:
+                return new ClassicBoard();
+            case TEST:
+                return new TestBoard();
+            default:
+                throw new IllegalArgumentException("Unknown game type : " + type);
+        }
     }
-
     // Step 2
     // The methods below won't be used / tested before step 2
 
