@@ -22,6 +22,7 @@ public class VisualController extends SimpleController {
     public void initialize() throws PacManException {
         super.initialize();
         view.setController(this);
+        view.setBoard(getBoard());
         view.initialize();
         view.setLayout(PacManLayout.INIT);
     }
@@ -37,15 +38,21 @@ public class VisualController extends SimpleController {
     @Override
     public void receiveAction(GameAction action) throws PacManException {
         super.receiveAction(action);
-        // After action, update the view
-        if (action == GameAction.NEXT_FRAME || action == GameAction.START || action == GameAction.RESUME) {
-            view.update();
-        }
-        if (action == GameAction.PAUSE) {
-            view.setLayout(PacManLayout.PAUSE);
-        }
-        if (action == GameAction.RESUME) {
-            view.setLayout(PacManLayout.GAME_ON);
+        switch (action) {
+            case START:
+                view.setLayout(PacManLayout.GAME_ON);
+                break;
+            case PAUSE:
+                view.setLayout(PacManLayout.PAUSE);
+                break;
+            case RESUME:
+                view.setLayout(PacManLayout.GAME_ON);
+                break;
+            case NEXT_FRAME:
+                view.update();
+                break;
+            default:
+                break;
         }
     }
 }

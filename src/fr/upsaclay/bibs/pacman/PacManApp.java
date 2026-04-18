@@ -11,5 +11,13 @@ import javax.swing.*;
 public class PacManApp {
 
     public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            Controller controller = Controller.getController(InterfaceMode.VISUAL);
+            try {
+                controller.initialize();
+            } catch (PacManException e) {
+                e.printStackTrace();
+            }
+        });
     }
 }
