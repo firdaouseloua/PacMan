@@ -46,6 +46,7 @@ public class ClassicBoard extends AbstractBoard {
         // Initialize PacMan's state (direction, speed, etc.)
         if (this.pacMan != null) {
             this.pacMan.setIntention(null);
+            
         }
     }
 }
