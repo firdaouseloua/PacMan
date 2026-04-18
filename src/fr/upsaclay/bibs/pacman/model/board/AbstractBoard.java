@@ -11,35 +11,60 @@ import java.util.List;
 
 
 public abstract class AbstractBoard implements Board {
-    private GameType gameType;
-
+    protected GameType gameType;
     protected Maze maze;
-    protected PacMan pacMan;
 
-    public AbstractBoard(GameType gameType) {
-        this.gameType = gameType;
-    }
+    /**
+     * Return the type of game of the board
+     * Depending on the type, the maze or other initializations might be different
+     * @return the game type
+     */
+    public abstract GameType getGameType();
 
-    public GameType getGameType() {
-        return gameType;
-    }
+    /**
+     * Initialization of the board
+     * (loads the maze, create and place the actors, etc.)
+     * @throws PacManException in case something went wrong
+     */
+    public abstract void initialize() throws PacManException;
 
-    public Maze getMaze() {
-        return maze;
-    }
+    /**
+     * Start the actors
+     * Perform all necessary actions to start actors at the beginning of the game
+     */
+    public abstract void startActors();
 
-    public PacMan getPacMan() {
-        return pacMan;
-    }
+    /** Return the maze
+     * @return the maze
+     */
+    public abstract Maze getMaze();
 
-     public static Board createBoard(GameType type) {
+    /**
+     * Return PacMan
+     * @return the PacMan actor
+     */
+    public abstract Actor getPacMan();
+
+    /**
+     * Perform all necessary actions for the next game frame
+     * This might require to move the actors,
+     * perform some checks, etc.
+     */
+    public abstract void nextFrame();
+
+    /**
+     * Create a board depending on the game type
+     * @param type a game type
+     * @return the board
+     */
+    public static Board createBoard(GameType type) {
         switch (type) {
-             case CLASSIC:
-                 return new ClassicBoard();
-             case TEST:
-                 return new TestBoard();
-             default:
-                 throw new IllegalArgumentException("Unknown game type : " + type);
+            case CLASSIC:
+                return new ClassicBoard();
+            case TEST:
+                return new TestBoard();
+            default:
+                throw new IllegalArgumentException("Unknown game type : " + type);
         }
-     }
+    }
 }

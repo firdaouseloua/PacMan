@@ -82,7 +82,7 @@ public interface Board {
 
     /**
      * Return the current state of the board
-     * used to detect end of level / end of game
+     * used to detect end of level / end of game`
      * @return the board state
      */
     BoardState getBoardState();
