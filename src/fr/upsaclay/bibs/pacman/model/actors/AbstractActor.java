@@ -247,7 +247,6 @@ public abstract class AbstractActor implements Actor {
             blocked = false;
             return true;
         }
-        blocked = true;
         return false;
     }
 }

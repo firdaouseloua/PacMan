@@ -86,11 +86,15 @@ public class PacMan extends AbstractActor {
             blocked = false;
             return;
         }
-
-        if (blocked && canMove(intention)) {
-            direction = intention;
-            intention = null;
-            blocked = false;
+        if (blocked && (intention!=null)) {
+            if (canMove(intention)) {
+                direction = intention;
+                intention = null;
+                blocked = false;
+            } 
+            else {
+                intention = null; 
+            }
         }
     }
 
@@ -105,11 +109,12 @@ public class PacMan extends AbstractActor {
                 direction = intention;
                 intention = null;
                 blocked = false;
-            } else {
+            }
+            else {
                 intention = null;
+                blocked = true;
             }
         }
-
         tryMoveForward();
     }
 }

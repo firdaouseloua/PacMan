@@ -12,6 +12,8 @@ import java.util.List;
 public abstract class AbstractBoard implements Board {
     protected GameType gameType;
     protected Maze maze;
+    protected PacMan pacMan;
+    protected Board board;
 
     /**
      * Return the type of game of the board
@@ -45,7 +47,7 @@ public abstract class AbstractBoard implements Board {
      * @return the PacMan actor
      */
     public Actor getPacMan() {
-        return null;
+        return this.pacMan;
     }
 
     /**
@@ -53,7 +55,11 @@ public abstract class AbstractBoard implements Board {
      * This might require to move the actors,
      * perform some checks, etc.
      */
-    public void nextFrame() {}
+    public void nextFrame(){
+        if(this.pacMan != null) {
+            this.pacMan.nextMove();
+        }
+    }
 
     // Step 2 methods 
     public int getScore() {

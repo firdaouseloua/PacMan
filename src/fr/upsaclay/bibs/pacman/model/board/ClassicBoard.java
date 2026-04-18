@@ -2,7 +2,12 @@ package fr.upsaclay.bibs.pacman.model.board;
 
 import fr.upsaclay.bibs.pacman.GameType;
 import fr.upsaclay.bibs.pacman.PacManException;
+import fr.upsaclay.bibs.pacman.model.Direction;
+import fr.upsaclay.bibs.pacman.model.actors.*;
 import fr.upsaclay.bibs.pacman.model.maze.Maze;
+import fr.upsaclay.bibs.pacman.model.maze.TilePosition;
+
+import java.util.List;
 
 
 public class ClassicBoard extends AbstractBoard {
@@ -24,17 +29,23 @@ public class ClassicBoard extends AbstractBoard {
     @Override
     public void initialize() throws PacManException {
         try {
-            this.maze = Maze.loadFromFile("/home/neorain/M1_bioinfo/Projet_Pacman/resources/maze.txt");
+            this.maze = Maze.loadFromFile("resources/maze.txt");
+            this.pacMan = new PacMan(this, 112, 211);
+            this.pacMan.start();
         } catch (Exception e) {
-            throw new PacManException("Error while loading the maze");
+            throw new PacManException("Error while initializing");
         }
-    };
+    }
 
     /**
      * Start the actors
      * Perform all necessary actions to start actors at the beginning of the game
      */
     @Override
-    public void startActors(){
-    };
+    public void startActors() {
+        // Initialize PacMan's state (direction, speed, etc.)
+        if (this.pacMan != null) {
+            this.pacMan.setIntention(null);
+        }
+    }
 }
