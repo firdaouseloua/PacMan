@@ -9,7 +9,6 @@ import fr.upsaclay.bibs.pacman.model.maze.TilePosition;
 
 import java.util.List;
 
-
 public abstract class AbstractBoard implements Board {
     protected GameType gameType;
     protected Maze maze;
@@ -37,34 +36,162 @@ public abstract class AbstractBoard implements Board {
     /** Return the maze
      * @return the maze
      */
-    public abstract Maze getMaze();
+    public Maze getMaze() {
+        return this.maze;
+    }
 
     /**
      * Return PacMan
      * @return the PacMan actor
      */
-    public abstract Actor getPacMan();
+    public Actor getPacMan() {
+        return null;
+    }
 
     /**
      * Perform all necessary actions for the next game frame
      * This might require to move the actors,
      * perform some checks, etc.
      */
-    public abstract void nextFrame();
+    public void nextFrame() {}
 
-    /**
-     * Create a board depending on the game type
-     * @param type a game type
-     * @return the board
-     */
-    public static Board createBoard(GameType type) {
-        switch (type) {
-            case CLASSIC:
-                return new ClassicBoard();
-            case TEST:
-                return new TestBoard();
-            default:
-                throw new IllegalArgumentException("Unknown game type : " + type);
-        }
+    // Step 2 methods 
+    public int getScore() {
+        return 0;
+    }
+
+    public BoardState getBoardState() {
+        return null;
+    }
+
+    public Ghost getGhost(GhostType ghostType) {
+        return null;
+    }
+
+    public List<Ghost> getGhosts() {
+        return null;
+    }
+
+    // Step 3 methods
+    public int getLevel() {
+        return 0;
+    }
+
+    public void initializeNewLevel(int level) throws PacManException {
+    }
+
+    public void setNumberOfLives(int nbLives) {
+    }
+
+    public int getNumberOfLives() {
+        return 0;
+    }
+
+    public void initializeNewLife() {
+    }
+
+    public boolean hasGhost(GhostType ghostType) {
+        return false;
+    }
+
+    public void disableGhost(GhostType ghostType) {
+    }
+
+    public void disableStateTime() {
+    }
+
+    public Direction getRandomDirection() {
+        return null;
+    }
+
+    public TilePosition penEntry() {
+        return null;
+    }
+
+    public int minYPen() {
+        return 0;
+    }
+
+    public int maxYPen() {
+        return 0;
+    }
+
+    public int penGhostXPosition(GhostType type) {
+        return 0;
+    }
+
+    public int penGhostYPosition(GhostType type) {
+        return 0;
+    }
+
+    public int outPenXPosition() {
+        return 0;
+    }
+
+    public int outPenYPosition() {
+        return 0;
+    }
+
+    public Counter noDotCounter() {
+        return null;
+    }
+
+    public Counter specialDotCounter() {
+        return null;
+    }
+
+    public double getLevelPacManSpeed() {
+        return 0;
+    }
+
+    public double getFrightPacManSpeed() {
+        return 0;
+    }
+
+    public double getLevelGhostSpeed() {
+        return 0;
+    }
+
+    public double getTunnelGhostSpeed() {
+        return 0;
+    }
+
+    public double getFrightGhostSpeed() {
+        return 0;
+    }
+
+    public double getDeadGhostSpeed() {
+        return 0;
+    }
+
+    // Step 4 methods
+    public void setExtraLifeScore(int score) {
+    }
+
+    public int getExtraLifeScore() {
+        return 0;
+    }
+
+    public Bonus getCurrentBonus() {
+        return null;
+    }
+
+    public BonusType getLevelBonusType(int level) {
+        return null;
+    }
+
+    public void setBonusOnBoard() {
+    }
+
+    public double getElroyGhostSpeed(int elroyNumber) {
+        return 0;
+    }
+
+    public int getElroyDotValue(int elroyNumber) {
+        return 0;
+    }
+
+    public List<BoardEvent> getCurrentEvents() {
+        return null;
     }
 }

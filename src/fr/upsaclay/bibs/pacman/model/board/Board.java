@@ -30,7 +30,7 @@ public interface Board {
      * (loads the maze, create and place the actors, etc.)
      * @throws PacManException in case something went wrong
      */
-     void initialize() throws PacManException;
+    void initialize() throws PacManException;
 
     /**
      * Start the actors
