@@ -5,6 +5,15 @@ import fr.upsaclay.bibs.pacman.PacManException;
 import fr.upsaclay.bibs.pacman.model.actors.PacMan;
 import fr.upsaclay.bibs.pacman.model.maze.Maze;
 
+/**
+ * Test board used by the unit tests.
+ *
+ * Step 2 expectations:
+ * - test maze
+ * - PacMan only
+ * - no ghosts
+ */
+
 public class TestBoard extends AbstractBoard {
     /**
      * Return the type of game of the board
@@ -25,8 +34,15 @@ public class TestBoard extends AbstractBoard {
     public void initialize() throws PacManException {
         try {
             this.maze = Maze.loadFromFile("resources/test.txt");
+
+            // Initial PacMan position from the tests
             this.pacMan = new PacMan(this, 35, 75);
-            this.pacMan.start();
+
+            // Fresh board state
+            this.score = 0;
+            this.boardState = BoardState.INITIAL;
+            this.ghosts.clear();
+
         } catch (Exception e) {
             throw new PacManException("Error while initializing");
         }
@@ -38,9 +54,6 @@ public class TestBoard extends AbstractBoard {
      */
     @Override
     public void startActors() {
-        // Initialize PacMan's state (direction, speed, etc.)
-        if (this.pacMan != null) {
-            this.pacMan.setIntention(null);
-        }
+        super.startActors();
     }
 }

@@ -9,8 +9,16 @@ import fr.upsaclay.bibs.pacman.model.maze.TilePosition;
 
 import java.util.List;
 
-
+/**
+ * Classic game board.
+ *
+ * Step 2 content:
+ * - classic maze
+ * - PacMan
+ * - one ghost: Blinky
+ */
 public class ClassicBoard extends AbstractBoard {
+
     /**
      * Return the type of game of the board
      * Depending on the type, the maze or other initializations might be different
@@ -22,18 +30,32 @@ public class ClassicBoard extends AbstractBoard {
     };
 
     /**
-     * Initialization of the board
-     * (loads the maze, create and place the actors, etc.)
-     * @throws PacManException in case something went wrong
+     * Initializes the classic board.
+     *
+     * Why we reset everything here:
+     * - score must start at 0
+     * - state must start at INITIAL
+     * - ghost list must be recreated cleanly
      */
     @Override
     public void initialize() throws PacManException {
         try {
             this.maze = Maze.loadFromFile("resources/maze.txt");
+            // Initial PacMan position from the statement/tests
             this.pacMan = new PacMan(this, 112, 211);
-            this.pacMan.start();
+
+            // Reset score/state/ghost list for a fresh game
+            this.score = 0;
+            this.boardState = BoardState.INITIAL;
+            this.ghosts.clear();
+
+            // Step 2: only Blinky is present
+            // Initial position from the statement:
+            // x = 112, y = 115, direction LEFT, speed 0.94
+            this.ghosts.add(new Blinky(this, 112, 115));
+
         } catch (Exception e) {
-            throw new PacManException("Error while initializing");
+            throw new PacManException("Error while initializing classic board");
         }
     }
 
@@ -43,10 +65,6 @@ public class ClassicBoard extends AbstractBoard {
      */
     @Override
     public void startActors() {
-        // Initialize PacMan's state (direction, speed, etc.)
-        if (this.pacMan != null) {
-            this.pacMan.setIntention(null);
-            
-        }
+        super.startActors();
     }
 }
