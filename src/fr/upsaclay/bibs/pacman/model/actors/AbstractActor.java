@@ -232,6 +232,15 @@ public abstract class AbstractActor implements Actor {
     protected void moveOnePixel(Direction dir) {
         x += dir.getDx();
         y += dir.getDy();
+
+        int pixelWidth = getMaze().getPixelWidth();
+
+        if (x < 0) {
+            x = pixelWidth - 1;
+        } else if (x >= pixelWidth) {
+            x = 0;
+        }
+
         realX = x;
         realY = y;
     }
@@ -242,11 +251,19 @@ public abstract class AbstractActor implements Actor {
      * @return true if the move succeeded
      */
     protected boolean tryMoveForward() {
+        if (!isAtTileCenter()) {
+            moveOnePixel(direction);
+            blocked = false;
+            return true;
+        }
+
         if (canMove(direction)) {
             moveOnePixel(direction);
             blocked = false;
             return true;
         }
+
+        blocked = true;
         return false;
     }
 }

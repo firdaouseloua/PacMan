@@ -39,7 +39,6 @@ public class PacMan extends AbstractActor {
      */
     @Override
     public void start() {
-        this.direction = Direction.LEFT;
         this.intention = null;
         this.blocked = false;
         this.speed = 1.0;
@@ -55,20 +54,26 @@ public class PacMan extends AbstractActor {
     public void nextMove() {
         applyImmediateIntentionIfNeeded();
 
-        if (isBeforeCenter(direction)) {
-            tryMoveForward();
-            return;
-        }
-
+        // If PacMan is exactly at the center, handle turn / wall logic there
         if (isAtTileCenter()) {
             handleCenterBehavior();
             return;
         }
 
-        if (isAfterCenter(direction)) {
-            tryMoveForward();
+        // Otherwise continue one pixel in the current direction
+        moveOnePixel(direction);
+        blocked = false;
+
+        // If this move made PacMan reach the center of the next tile,
+        // try the pending intention now (without moving again this turn)
+        if (isAtTileCenter() && intention != null) {
+            if (canMove(intention)) {
+                direction = intention;
+            }
+            intention = null;
         }
     }
+
 
     /**
      * Applies an intention immediately in the two situations required by the spec:
@@ -107,13 +112,8 @@ public class PacMan extends AbstractActor {
         if (intention != null) {
             if (canMove(intention)) {
                 direction = intention;
-                intention = null;
-                blocked = false;
             }
-            else {
-                intention = null;
-                blocked = true;
-            }
+            intention = null;
         }
         tryMoveForward();
     }
