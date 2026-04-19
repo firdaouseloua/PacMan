@@ -13,7 +13,7 @@ public class VisualController extends SimpleController {
 
     private PacManView view;
 
-    public VisualController() {
+    public VisualController() throws PacManException {
         super();
         this.view = new BasicPacManView();
     }
@@ -41,6 +41,7 @@ public class VisualController extends SimpleController {
         switch (action) {
             case START:
                 view.setLayout(PacManLayout.GAME_ON);
+                initializeNewGame();
                 break;
             case PAUSE:
                 view.setLayout(PacManLayout.PAUSE);

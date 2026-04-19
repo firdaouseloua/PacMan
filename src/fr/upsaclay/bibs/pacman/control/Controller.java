@@ -64,8 +64,9 @@ public interface Controller {
      * Different types correspond to different possible views or game interfaces
      * @param mode the controller mode
      * @return the Controller
+     * @throws PacManException 
      */
-    static Controller getController(InterfaceMode mode) {
+    static Controller getController(InterfaceMode mode) throws PacManException {
         switch (mode) {
             case SIMPLE:
                 return new SimpleController();

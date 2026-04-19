@@ -1,5 +1,6 @@
 package fr.upsaclay.bibs.pacman.view;
 
+import fr.upsaclay.bibs.pacman.PacManException;
 import fr.upsaclay.bibs.pacman.control.Controller;
 import fr.upsaclay.bibs.pacman.model.board.Board;
 
@@ -14,8 +15,9 @@ public interface PacManView {
      * the board is set only so that the view has the information to show the game
      * it should NOT be modified by the view
      * @param board a PacMan board
+     * @throws PacManException 
      */
-    void setBoard(Board board);
+    void setBoard(Board board) throws PacManException;
 
     /**
      * Sets the controller

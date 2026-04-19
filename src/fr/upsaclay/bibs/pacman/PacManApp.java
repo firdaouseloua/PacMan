@@ -10,13 +10,14 @@ import javax.swing.*;
  */
 public class PacManApp {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws PacManException {
         SwingUtilities.invokeLater(() -> {
-            Controller controller = Controller.getController(InterfaceMode.VISUAL);
+            Controller controller;
             try {
+                controller = Controller.getController(InterfaceMode.VISUAL);
                 controller.initialize();
             } catch (PacManException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         });
     }
