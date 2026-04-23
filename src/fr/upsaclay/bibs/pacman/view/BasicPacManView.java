@@ -303,7 +303,7 @@ private class GamePanel extends JPanel {
             List<Integer> palette = entry.getValue();
 
             for (String dir : actorsDir) {
-                if (ghostName.equals("FRIGHTENED") != dir.equals("frightened")) continue;
+                if (ghostName.equals("FRIGHTENED") != dir.equals("FRIGHTENED")) continue;
                 String path = "resources/ghosts/" + dir + ".txt";
                 File file = new File(path);
                 if (file.exists()) {
@@ -504,18 +504,20 @@ private class GamePanel extends JPanel {
             }
         }
 
-        if (blinky != null) {
-            String key = blinky.getGhostState() == GhostState.FRIGHTENED ? "FRIGHTENED_FRIGHTENED" : "BLINKY_" + blinky.getDirection().toString().toUpperCase();
-            
-            BufferedImage img = actorTextures.get(key);
-            if (img != null) {
-                int drawX = blinky.getX() - (img.getWidth() / 2);
-                int drawY = blinky.getY() - (img.getHeight() / 2);
+        for (Ghost ghost : board.getGhosts()) {
+            if (ghost != null) {
+                String key = (ghost.getGhostState() == GhostState.FRIGHTENED || ghost.getGhostState() == GhostState.FRIGHTENED_END) 
+                                ? "FRIGHTENED_FRIGHTENED" : ghost.getGhostType().toString().toUpperCase() + "_" + ghost.getDirection().toString().toUpperCase();
+                //System.out.println(key);
+                BufferedImage img = actorTextures.get(key);
+                if (img != null) {
+                    int drawX = ghost.getX() - (img.getWidth() / 2);
+                    int drawY = ghost.getY() - (img.getHeight() / 2);
 
-                g2d.drawImage(img, drawX, drawY, null);
+                    g2d.drawImage(img, drawX, drawY, null);
+                }
             }
         }
-
 
         if (board != null && board.getBoardState() == BoardState.LIFE_OVER) {
             drawLifeOver(g2d);

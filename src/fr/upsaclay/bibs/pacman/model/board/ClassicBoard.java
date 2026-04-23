@@ -53,6 +53,9 @@ public class ClassicBoard extends AbstractBoard {
             // Initial position from the statement:
             // x = 112, y = 115, direction LEFT, speed 0.94
             this.ghosts.add(new Blinky(this, 112, 115));
+            this.ghosts.add(new Pinky(this, 112, 139));
+            this.ghosts.add(new Inky(this, 96, 139));
+            this.ghosts.add(new Clyde(this, 128, 139));
 
         } catch (Exception e) {
             throw new PacManException("Error while initializing classic board");
