@@ -225,7 +225,7 @@ public class BasicPacManView extends JFrame implements PacManView {
             controller.receiveAction(GameAction.NEXT_FRAME);
             if (board != null) {
                 BoardState currentState = board.getBoardState();
-                if (currentState == BoardState.LIFE_OVER || currentState == BoardState.LEVEL_OVER) {
+                if (currentState == BoardState.LIFE_OVER || currentState == BoardState.LEVEL_OVER || currentState == BoardState.GAME_OVER) {
                         timer.stop(); 
                         gamePanel.repaint(); 
                     }
@@ -406,10 +406,16 @@ private class GamePanel extends JPanel {
             return;
         }
 
-        if (board != null && board.getBoardState() == BoardState.LEVEL_OVER) {
+        if (board != null && board.getBoardState() == BoardState.GAME_OVER) {
             drawGameOverPage(g2d);
             return; 
         }
+
+        if (board != null && board.getBoardState() == BoardState.LEVEL_OVER) {
+            drawLevelComplete(g2d);
+            return; 
+        }
+
         
         if (board == null || board.getMaze() == null) {
             return;
@@ -520,7 +526,7 @@ private class GamePanel extends JPanel {
         String title = "PAC-MAN";
         FontMetrics fm = g.getFontMetrics();
         int titleX = (width - fm.stringWidth(title)) / 2;
-        int titleY = height / 3;
+        int titleY = height / 2 - 20;
         g.drawString(title, titleX, titleY);
         
         g.setColor(Color.WHITE);
@@ -528,7 +534,7 @@ private class GamePanel extends JPanel {
         String instruction = "Press ENTER to Start";
         fm = g.getFontMetrics();
         int instrX = (width - fm.stringWidth(instruction)) / 2;
-        int instrY = height * 2 / 3;
+        int instrY = height / 2 + 20;
         g.drawString(instruction, instrX, instrY);
     }
 
@@ -556,11 +562,9 @@ private class GamePanel extends JPanel {
         int width = getWidth() / SCALE;
         int height = getHeight() / SCALE;
         
-        // Fill the whole screen with black
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, width, height);
         
-        // Draw the Big Red "LEVEL COMPLETE" or "GAME OVER" text
         g.setColor(Color.RED);
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 16));
         String title = "GAME OVER";
@@ -573,6 +577,31 @@ private class GamePanel extends JPanel {
         g.setColor(Color.WHITE);
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 12));
         String scoreText = "Final Score: " + (board != null ? board.getScore() : 0);
+        fm = g.getFontMetrics();
+        int scoreX = (width - fm.stringWidth(scoreText)) / 2;
+        int scoreY = height / 2;
+        g.drawString(scoreText, scoreX, scoreY);
+    }
+
+        private void drawLevelComplete(Graphics2D g) {
+        int width = getWidth() / SCALE;
+        int height = getHeight() / SCALE;
+        
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, width, height);
+        
+        g.setColor(Color.RED);
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 16));
+        String title = "You Win!";
+        FontMetrics fm = g.getFontMetrics();
+        int titleX = (width - fm.stringWidth(title)) / 2;
+        int titleY = height / 3;
+        g.drawString(title, titleX, titleY);
+        
+        // Draw the final score underneath
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 12));
+        String scoreText = "Current Score: " + (board != null ? board.getScore() : 0);
         fm = g.getFontMetrics();
         int scoreX = (width - fm.stringWidth(scoreText)) / 2;
         int scoreY = height / 2;
