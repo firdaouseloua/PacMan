@@ -145,8 +145,6 @@ public abstract class AbstractBoard implements Board {
         }
         for (Ghost ghost : ghosts) {
             ghost.start();
-            ghost.setGhostState(globalGhostState);
-            updateGhostSpeed(ghost);
         }
 
         ghostStateFrameCount = 0;
@@ -425,11 +423,6 @@ public abstract class AbstractBoard implements Board {
                         break;
                 }
 
-                /*
-                * Dead ghosts should head back to the pen entry.
-                * Full pen logic will be refined later.
-                */
-                ghost.setGhostPenState(GhostPenState.GET_IN);
                 continue;
             }
 
@@ -465,22 +458,45 @@ public abstract class AbstractBoard implements Board {
      * - otherwise -> normal ghost speed
      */
     protected void updateGhostSpeed(Ghost ghost) {
-        Tile tile = maze.getTile(ghost.getCurrentTile());
+        /*
+        * Ghosts moving inside / into / out of the pen always use tunnel speed.
+        */
+        if (ghost.getGhostPenState() == GhostPenState.GET_IN
+                || ghost.getGhostPenState() == GhostPenState.GET_OUT
+                || ghost.getGhostPenState() == GhostPenState.IN) {
+            ghost.setSpeed(getTunnelGhostSpeed());
+            return;
+        }
+
+        /*
+        * Dead ghosts use dead speed while returning to the pen entry.
+        */
         if (ghost.getGhostState() == GhostState.DEAD) {
             ghost.setSpeed(getDeadGhostSpeed());
             return;
         }
-        if (tile == Tile.SL || ghost.getGhostPenState() != GhostPenState.OUT) {
+        Tile tile = maze.getTile(ghost.getCurrentTile());
+
+        /*
+        * Tunnel / slow tiles always force tunnel speed.
+        */
+        if (tile == Tile.SL) {
             ghost.setSpeed(getTunnelGhostSpeed());
-        } else {
-            ghost.setSpeed(getLevelGhostSpeed());
+            return;
         }
+
+        /*
+        * Frightened ghosts use frightened speed.
+        */
         if (ghost.getGhostState() == GhostState.FRIGHTENED
                 || ghost.getGhostState() == GhostState.FRIGHTENED_END) {
             ghost.setSpeed(getFrightGhostSpeed());
             return;
         }
 
+        /*
+        * Otherwise ghosts use their normal level speed.
+        */
         ghost.setSpeed(getLevelGhostSpeed());
     }
 
@@ -513,7 +529,7 @@ public abstract class AbstractBoard implements Board {
         this.numberOfLives = oldLives;
         this.boardState = BoardState.INITIAL;
 
-        this.globalGhostState = GhostState.CHASE;
+        this.globalGhostState = GhostState.SCATTER;
         this.ghostStateFrameCount = 0;
         this.frightenedFramesRemaining = 0;
         this.frightenedGhostsEaten = 0;
@@ -549,7 +565,7 @@ public abstract class AbstractBoard implements Board {
         resetActorsToInitialPositions();
         boardState = BoardState.INITIAL;
 
-        this.globalGhostState = GhostState.CHASE;
+        this.globalGhostState = GhostState.SCATTER;
         this.ghostStateFrameCount = 0;
         this.frightenedFramesRemaining = 0;
         this.frightenedGhostsEaten = 0;
@@ -568,25 +584,37 @@ public abstract class AbstractBoard implements Board {
 
             if (!disabledGhosts.contains(GhostType.BLINKY)) {
                 Blinky blinky = new Blinky(this, 112, 115);
+                blinky.setGhostState(GhostState.SCATTER);
                 blinky.setGhostPenState(GhostPenState.OUT);
+                blinky.setOutOfPenDirection(Direction.LEFT);
+                blinky.setSpeed(getLevelGhostSpeed());
                 ghosts.add(blinky);
             }
 
             if (!disabledGhosts.contains(GhostType.PINKY)) {
                 Pinky pinky = new Pinky(this, 112, 139);
+                pinky.setGhostState(GhostState.SCATTER);
                 pinky.setGhostPenState(GhostPenState.IN);
+                pinky.setOutOfPenDirection(Direction.LEFT);
+                pinky.setSpeed(getLevelGhostSpeed());
                 ghosts.add(pinky);
             }
 
             if (!disabledGhosts.contains(GhostType.INKY)) {
                 Inky inky = new Inky(this, 96, 139);
+                inky.setGhostState(GhostState.SCATTER);
                 inky.setGhostPenState(GhostPenState.IN);
+                inky.setOutOfPenDirection(Direction.LEFT);
+                inky.setSpeed(getLevelGhostSpeed());
                 ghosts.add(inky);
             }
 
             if (!disabledGhosts.contains(GhostType.CLYDE)) {
                 Clyde clyde = new Clyde(this, 128, 139);
+                clyde.setGhostState(GhostState.SCATTER);
                 clyde.setGhostPenState(GhostPenState.IN);
+                clyde.setOutOfPenDirection(Direction.LEFT);
+                clyde.setSpeed(getLevelGhostSpeed());
                 ghosts.add(clyde);
             }
 
@@ -684,7 +712,7 @@ public abstract class AbstractBoard implements Board {
     @Override
     public double getLevelPacManSpeed() {
         if (level == 1) return 1.0;
-        if (level <= 4) return 1.14;
+        if (level >= 2 && level <= 4) return 1.14;
         if (level <= 20) return 1.26;
         return 1.14;
     }
@@ -709,7 +737,7 @@ public abstract class AbstractBoard implements Board {
     @Override
     public double getTunnelGhostSpeed() {
         if (level == 1) return 0.50;
-        if (level <= 4) return 0.57;
+        if (level >= 2 && level <= 4) return 0.57;
         return 0.63;
     }
 

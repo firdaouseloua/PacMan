@@ -45,18 +45,44 @@ public class ClassicBoard extends AbstractBoard {
             // Initial PacMan position from the statement/tests
             this.pacMan = new PacMan(this, 112, 211);
 
-            // Reset score/state/ghost list for a fresh game
-            this.score = 0;
-            this.boardState = BoardState.INITIAL;
             this.ghosts.clear();
+            this.boardState = BoardState.INITIAL;
 
-            // Step 2: only Blinky is present
-            // Initial position from the statement:
-            // x = 112, y = 115, direction LEFT, speed 0.94
-            this.ghosts.add(new Blinky(this, 112, 115));
-            this.ghosts.add(new Pinky(this, 112, 139));
-            this.ghosts.add(new Inky(this, 96, 139));
-            this.ghosts.add(new Clyde(this, 128, 139));
+            if (!disabledGhosts.contains(GhostType.BLINKY)) {
+                Blinky blinky = new Blinky(this, 112, 115);
+                blinky.setGhostState(GhostState.SCATTER);
+                blinky.setOutOfPenDirection(Direction.LEFT);
+                blinky.setGhostPenState(GhostPenState.OUT);
+                blinky.setSpeed(getLevelGhostSpeed());
+                ghosts.add(blinky);
+            }
+
+            if (!disabledGhosts.contains(GhostType.PINKY)) {
+                Pinky pinky = new Pinky(this, 112, 139);
+                pinky.setGhostState(GhostState.SCATTER);
+                pinky.setGhostPenState(GhostPenState.IN);
+                pinky.setOutOfPenDirection(Direction.LEFT);
+                pinky.setSpeed(getTunnelGhostSpeed());
+                ghosts.add(pinky);
+            }
+
+            if (!disabledGhosts.contains(GhostType.INKY)) {
+                Inky inky = new Inky(this, 96, 139);
+                inky.setGhostState(GhostState.SCATTER);
+                inky.setGhostPenState(GhostPenState.IN);
+                inky.setOutOfPenDirection(Direction.LEFT);
+                inky.setSpeed(getTunnelGhostSpeed());
+                ghosts.add(inky);
+            }
+
+            if (!disabledGhosts.contains(GhostType.CLYDE)) {
+                Clyde clyde = new Clyde(this, 128, 139);
+                clyde.setGhostState(GhostState.SCATTER);
+                clyde.setGhostPenState(GhostPenState.IN);
+                clyde.setOutOfPenDirection(Direction.LEFT);
+                clyde.setSpeed(getTunnelGhostSpeed());
+                ghosts.add(clyde);
+            }
 
         } catch (Exception e) {
             throw new PacManException("Error while initializing classic board");

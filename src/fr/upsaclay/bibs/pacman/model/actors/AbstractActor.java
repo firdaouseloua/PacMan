@@ -187,6 +187,65 @@ public abstract class AbstractActor implements Actor {
     }
 
     /**
+     * Returns the local x position inside the current tile, using real coordinates.
+     */
+    protected double getLocalRealX() {
+        double value = realX % Maze.TILE_WIDTH;
+        if (value < 0) value += Maze.TILE_WIDTH;
+        return value;
+    }
+
+    /**
+     * Returns the local y position inside the current tile, using real coordinates.
+     */
+    protected double getLocalRealY() {
+        double value = realY % Maze.TILE_HEIGHT;
+        if (value < 0) value += Maze.TILE_HEIGHT;
+        return value;
+    }
+
+    /**
+     * Returns true when the actor has crossed the tile center during this frame.
+     * This is needed for speeds > 1.
+     */
+    protected boolean hasCrossedCenter(Direction dir, double oldRealX, double oldRealY) {
+        double oldLocalX = oldRealX % Maze.TILE_WIDTH;
+        double oldLocalY = oldRealY % Maze.TILE_HEIGHT;
+
+        if (oldLocalX < 0) oldLocalX += Maze.TILE_WIDTH;
+        if (oldLocalY < 0) oldLocalY += Maze.TILE_HEIGHT;
+
+        double newLocalX = getLocalRealX();
+        double newLocalY = getLocalRealY();
+
+        return switch (dir) {
+            case LEFT -> oldLocalX > Maze.TITLE_CENTER_X && newLocalX < Maze.TITLE_CENTER_X;
+            case RIGHT -> oldLocalX < Maze.TITLE_CENTER_X && newLocalX > Maze.TITLE_CENTER_X;
+            case UP -> oldLocalY > Maze.TITLE_CENTER_Y && newLocalY < Maze.TITLE_CENTER_Y;
+            case DOWN -> oldLocalY < Maze.TITLE_CENTER_Y && newLocalY > Maze.TITLE_CENTER_Y;
+        };
+    }
+
+    /**
+     * Snaps the actor to the exact center line after crossing a center with speed > 1.
+     */
+    protected void snapToTileCenter(Direction dir, double oldRealX, double oldRealY) {
+        int currentCol = getCurrentTile().getCol();
+        int currentLine = getCurrentTile().getLine();
+
+        if (dir == Direction.LEFT || dir == Direction.RIGHT) {
+            realX = currentCol * Maze.TILE_WIDTH + Maze.TITLE_CENTER_X;
+            realY = currentLine * Maze.TILE_HEIGHT + Maze.TITLE_CENTER_Y;
+        } else {
+            realX = currentCol * Maze.TILE_WIDTH + Maze.TITLE_CENTER_X;
+            realY = currentLine * Maze.TILE_HEIGHT + Maze.TITLE_CENTER_Y;
+        }
+
+        x = (int) realX;
+        y = (int) realY;
+    }
+
+    /**
      * Returns true when the actor has not yet reached the center of the tile,
      * relative to its current moving direction.
      */
@@ -236,6 +295,9 @@ public abstract class AbstractActor implements Actor {
      * Example: if realX = 34.5 then x = 34
      */
     protected void moveOnePixel(Direction dir) {
+        double oldRealX = realX;
+        double oldRealY = realY;
+
         realX += dir.getDx() * speed;
         realY += dir.getDy() * speed;
 
@@ -251,8 +313,14 @@ public abstract class AbstractActor implements Actor {
         }
 
         /*
-        * The displayed integer coordinates are truncated versions of the real coordinates.
+        * If speed is greater than 1, the actor may jump over the center.
+        * We snap to the exact center when that happens.
         */
+        if (speed > 1.0 && hasCrossedCenter(dir, oldRealX, oldRealY)) {
+            snapToTileCenter(dir, oldRealX, oldRealY);
+            return;
+        }
+
         x = (int) realX;
         y = (int) realY;
     }
@@ -263,13 +331,7 @@ public abstract class AbstractActor implements Actor {
      * @return true if the move succeeded
      */
     protected boolean tryMoveForward() {
-        if (!isAtTileCenter()) {
-            moveOnePixel(direction);
-            blocked = false;
-            return true;
-        }
-
-        if (canMove(direction)) {
+        if (canMove(direction) || !isAtTileCenter()) {
             moveOnePixel(direction);
             blocked = false;
             return true;
@@ -277,5 +339,5 @@ public abstract class AbstractActor implements Actor {
 
         blocked = true;
         return false;
-    }
+        }
 }
