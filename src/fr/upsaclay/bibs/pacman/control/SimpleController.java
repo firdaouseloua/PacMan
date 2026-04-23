@@ -9,6 +9,17 @@ import fr.upsaclay.bibs.pacman.model.board.BoardState;
 /**
  * Simple controller without view, used for testing or simulation.
  * Implements the Controller interface for SIMPLE mode.
+ * 
+ *  Main role:
+ * - create and initialize the board
+ * - receive actions
+ * - check whether actions are allowed depending on the current state
+ * - forward valid actions to the model
+ *
+ * Step 3 additions:
+ * - handle NEXT_LEVEL
+ * - handle NEW_GAME
+ * - distinguish LIFE_OVER from GAME_OVER
  */
 public class SimpleController implements Controller {
 
@@ -33,6 +44,16 @@ public class SimpleController implements Controller {
         try {
             this.board = Board.createBoard(this.gameType);
             this.board.initialize();
+
+            /* Step 3 default values for a fresh game.*/
+            this.board.setNumberOfLives(2);
+            /*
+             * The board returned by createBoard starts at level 1 in our current design.
+             * If later needed, this could be made more explicit.
+             */
+            this.gameStarted = false;
+            this.paused = false;
+
         }
         catch (PacManException e) {
             throw new PacManException("Failed to initialize a new game");
@@ -49,6 +70,9 @@ public class SimpleController implements Controller {
         return this.gameType;
     }
 
+    /**
+     * Receives an action and decides whether it is allowed.
+     */
     @Override
     public void receiveAction(GameAction action) throws PacManException {
         /*
@@ -61,12 +85,13 @@ public class SimpleController implements Controller {
         BoardState state = board.getBoardState();
 
         /*
-        * Actions allowed when the level is over: only NEXT_LEVEL should be accepted.
-        */
+         * LEVEL_OVER:
+         * only NEXT_LEVEL should be accepted.
+         */
         if (state == BoardState.LEVEL_OVER) {
             if (action == GameAction.NEXT_LEVEL) {
-                initialize();
-                gameStarted = false;
+                board.initializeNewLevel(board.getLevel()+1);
+                gameStarted = true;
                 paused = false;
                 return;
             }
@@ -74,20 +99,32 @@ public class SimpleController implements Controller {
         }
 
         /*
-        * Actions allowed when a life is over: only NEW_GAME should be accepted in step 2.
-        */
+         * LIFE_OVER:
+         * we now restart the game flow with a NEW_GAME action in the visual version,
+         * but if there are still lives left, we can also reinitialize the current life.
+         */
         if (state == BoardState.LIFE_OVER) {
             if (action == GameAction.NEW_GAME) {
-                initialize();
-                gameStarted = false;
-                paused = false;
+                initializeNewGame();
                 return;
             }
             throw new ForbiddenActionException(action);
         }
 
         /*
-        * Normal state machine for INITIAL / STARTED gameplay.
+         * GAME_OVER:
+         * only NEW_GAME is allowed.
+         */
+        if (state == BoardState.GAME_OVER) {
+            if (action == GameAction.NEW_GAME) {
+                initializeNewGame();
+                return;
+            }
+            throw new ForbiddenActionException(action);
+        }
+
+        /*
+        * Normal state machine for gameplay.
         */
         switch (action) {
             case START:

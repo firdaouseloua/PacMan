@@ -8,7 +8,10 @@ import fr.upsaclay.bibs.pacman.view.PacManView;
 
 /**
  * Visual controller with view, extends SimpleController.
- * Adds view management for VISUAL mode.
+ * Main role:
+ * - initialize the graphical view
+ * - update the current layout depending on actions and board state
+ * - keep model and view synchronized
  */
 public class VisualController extends SimpleController {
 
@@ -32,7 +35,7 @@ public class VisualController extends SimpleController {
     public void initializeNewGame() throws PacManException {
         super.initializeNewGame();
         view.setBoard(getBoard());
-        view.setLayout(PacManLayout.GAME_ON);
+        view.setLayout(PacManLayout.INIT);
         view.update();
     }
 
@@ -42,27 +45,71 @@ public class VisualController extends SimpleController {
         switch (action) {
             case START:
                 /*
-                * START has already been handled by the parent controller:
-                * - gameStarted becomes true
-                * - board.startActors() is called
-                *
-                * So here we only need to switch the visual layout
-                * and refresh the view.
-                */
+                 * START has already started actors in the parent controller.
+                 * Here we only switch the layout to gameplay and refresh.
+                 */
                 view.setLayout(PacManLayout.GAME_ON);
                 view.update();
                 break;
             case PAUSE:
                 view.setLayout(PacManLayout.PAUSE);
+                view.update();
                 break;
             case RESUME:
                 view.setLayout(PacManLayout.GAME_ON);
+                view.update();
                 break;
             case NEXT_FRAME:
                 view.update();
                 break;
+            case NEW_GAME:
+                /*
+                 * A new game is created in the parent controller.
+                 * We reconnect the new board to the view and return to INIT.
+                 */
+                view.setBoard(getBoard());
+                view.setLayout(PacManLayout.INIT);
+                view.update();
+                break;
+
+            case NEXT_LEVEL:
+                /*
+                 * Next level is initialized in the parent controller.
+                 * We reconnect the board to the view and return to INIT.
+                 */
+                view.setBoard(getBoard());
+                view.setLayout(PacManLayout.INIT);
+                view.update();
+                break;
             default:
                 break;
+        }
+        /*
+         * Then react to the current board state after the action.
+         * This keeps the view synchronized even when the board state changes as a consequence of NEXT_FRAME.
+         */
+        if (getBoard() != null) {
+            BoardState state = getBoard().getBoardState();
+
+            switch (state) {
+                case LIFE_OVER:
+                    view.setLayout(PacManLayout.LIFE_OVER);
+                    view.update();
+                    break;
+
+                case LEVEL_OVER:
+                    view.setLayout(PacManLayout.LEVEL_OVER);
+                    view.update();
+                    break;
+
+                case GAME_OVER:
+                    view.setLayout(PacManLayout.GAME_OVER);
+                    view.update();
+                    break;
+
+                default:
+                    break;
+            }
         }
     }
 }

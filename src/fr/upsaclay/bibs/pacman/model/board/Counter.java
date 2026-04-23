@@ -4,7 +4,6 @@ package fr.upsaclay.bibs.pacman.model.board;
  * Represent an object to "count" things with a possible limit
  * The object will keep counting even after the limit but one can ask if the limit has been reached
  *
- * (not used before step 3)
  */
 public class Counter {
 

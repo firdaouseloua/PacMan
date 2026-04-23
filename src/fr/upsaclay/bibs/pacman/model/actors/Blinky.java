@@ -5,8 +5,9 @@ import fr.upsaclay.bibs.pacman.model.board.Board;
 import fr.upsaclay.bibs.pacman.model.maze.TilePosition;
 
 /**
- * Step 2 Blinky:
- * its target is always PacMan current tile.
+ * Blinky:
+ * Blinky targets PacMan directly in CHASE mode.
+ * In SCATTER mode, he targets the top-right corner.
  */
 public class Blinky extends AbstractGhost {
 
@@ -15,7 +16,6 @@ public class Blinky extends AbstractGhost {
      */
     public Blinky(Board board, int startX, int startY) {
         super(board, startX, startY, Direction.LEFT, GhostType.BLINKY);
-        this.speed = 0.94;
     }
 
     /**
@@ -24,5 +24,10 @@ public class Blinky extends AbstractGhost {
     @Override
     public TilePosition getTarget() {
         return getBoard().getPacMan().getCurrentTile();
+    }
+
+    @Override
+    protected TilePosition getScatterTarget() {
+        return new TilePosition(0, getMaze().getWidth() - 1);
     }
 }

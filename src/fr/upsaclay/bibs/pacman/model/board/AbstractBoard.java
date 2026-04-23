@@ -11,23 +11,23 @@ import fr.upsaclay.bibs.pacman.model.maze.Tile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 
 /**
  * Common implementation shared by all boards.
  *
- * Why this abstract class:
- * - Both TEST and CLASSIC boards need the same generic game logic.
- * - Only initialization differs (maze file, actors present, starting positions).
+ * Main responsibilities:
+ * - store the maze
+ * - store PacMan and the ghosts
+ * - store game score, level and lives
+ * - evolve the game frame by frame
+ * - detect dot eating, collisions and end-of-level situations
  *
- * Step 2 responsibilities handled here:
- * - score
- * - board state
- * - list of ghosts
- * - frame evolution
- * - eating dots
- * - collision PacMan / ghosts
- * - end of level detection
+ * Step 3.5 additions:
+ * - CHASE / SCATTER timed alternation
+ * - frightened mode after eating a big dot
+ * - ghosts can be eaten by PacMan while frightened
  */
 public abstract class AbstractBoard implements Board {
 
@@ -49,14 +49,74 @@ public abstract class AbstractBoard implements Board {
     /** Current board state. */
     protected BoardState boardState;
 
+    /**Current level. */
+    protected int level;
+
+    /** Remaining extra lives (step 3). */
+    protected int numberOfLives;
+
+    /** Random generator used by the board. */
+    protected Random random;
+
+    /** Whether ghost timed state switching is disabled. */
+    protected boolean stateTimeDisabled;
+
+    /** Ghost types disabled before initialization. */
+    protected List<GhostType> disabledGhosts;
+
+    /** Counter for frames without dots eaten. */
+    protected Counter noDotCounter;
+
+    /** Special counter for ghost pen mechanics. */
+    protected Counter specialDotCounter;
+
+    /*********************************************************************/
+    /** Step 3.5: ghost global mode timing                              **/
+    /*********************************************************************/
+
+    /** Global alternating state used for ghosts outside frightened mode. */
+    protected GhostState globalGhostState;
+
+    /** Number of frames spent in the current global ghost state. */
+    protected int ghostStateFrameCount;
+
+    /** Number of frames remaining in frightened mode. */
+    protected int frightenedFramesRemaining;
+
+    /** Number of ghosts eaten during the current frightened sequence. */
+    protected int frightenedGhostsEaten;
+
+
     /**
      * Base constructor for all boards.
-     * We initialize fields that are common to every board.
+     *
+     * We initialize:
+     * - score at 0
+     * - state at INITIAL
+     * - level at 1
+     * - number of extra lives at 2
+     * - counters with a very large limit for now
+     *
+     * Why Integer.MAX_VALUE:
+     * your Counter class requires a limit in the constructor,
+     * but at this stage we mostly use the counters as simple counters.
      */
     protected AbstractBoard() {
         this.ghosts = new ArrayList<>();
         this.score = 0;
         this.boardState = BoardState.INITIAL;
+        this.level = 1;
+        this.numberOfLives = 2;
+        this.random = new Random();
+        this.stateTimeDisabled = false;
+        this.disabledGhosts = new ArrayList<>();
+        this.noDotCounter = new Counter(Integer.MAX_VALUE);
+        this.specialDotCounter = new Counter(Integer.MAX_VALUE);
+
+        this.globalGhostState = GhostState.CHASE;
+        this.ghostStateFrameCount = 0;
+        this.frightenedFramesRemaining = 0;
+        this.frightenedGhostsEaten = 0;
     }
 
     @Override
@@ -66,20 +126,24 @@ public abstract class AbstractBoard implements Board {
     public abstract void initialize() throws PacManException;
 
     /**
-     * Generic actor start logic shared by all boards.
-     *
-     * Why here:
-     * - PacMan and ghosts must all be started together.
-     * - The board state must become STARTED at that moment.
+     * Starts all actors and switches board state to STARTED.
      */
     @Override
     public void startActors() {
         if (pacMan != null) {
             pacMan.start();
+            pacMan.setSpeed(getLevelPacManSpeed());
         }
         for (Ghost ghost : ghosts) {
             ghost.start();
+            ghost.setGhostState(globalGhostState);
+            updateGhostSpeed(ghost);
         }
+
+        ghostStateFrameCount = 0;
+        frightenedFramesRemaining = 0;
+        frightenedGhostsEaten = 0;
+
         boardState = BoardState.STARTED;
     }
 
@@ -100,19 +164,22 @@ public abstract class AbstractBoard implements Board {
      * 1. If the game is not started, do nothing
      * 2. Move PacMan
      * 3. Move ghosts
-     * 4. Let PacMan eat a dot if present
-     * 5. Check collisions PacMan / ghosts
-     * 6. Check end of level
+     *  4. Eat dot if needed
+     * 5. Check collisions
+     * 6. Check level over
      *
-     * This order matches the behavior expected by the provided tests.
+     * This order matches the behavior expected by the provided tests!!! 
      */
     @Override
     public void nextFrame() {
-        if (boardState == BoardState.LEVEL_OVER || boardState == BoardState.LIFE_OVER) {
+        if (boardState == BoardState.LEVEL_OVER || boardState == BoardState.LIFE_OVER || boardState == BoardState.GAME_OVER) {
             return;
         }
 
+        updateGhostStatesOverTime();
+
         if (pacMan != null) {
+            pacMan.setSpeed(getLevelPacManSpeed());
             pacMan.nextFrame();
         }
 
@@ -153,19 +220,14 @@ public abstract class AbstractBoard implements Board {
     }
 
     /**
-     * Step 2 helper:
      * if PacMan is currently on a dot, eat it, update score,
      * update maze tile, and apply stop time.
      *
-     * Rules from the statement/tests:
-     * - small dot (SD or ND): +10 points, stop 1 frame
-     * - big dot (BD): +50 points, stop 3 frames
+     * Important:
+     * - your Counter class uses inc(), not increment()
+     * - SD / ND = small dot = +10, stop 1 frame
+     * - BD = big dot = +50, stop 3 frames
      *
-     * Note:
-     * Tile.clearDot() already handles:
-     * - SD -> EE
-     * - BD -> EE
-     * - ND -> NT
      */
     protected void eatDotIfNeeded() {
         if (pacMan == null) {
@@ -175,24 +237,146 @@ public abstract class AbstractBoard implements Board {
         TilePosition pos = pacMan.getCurrentTile();
         Tile tile = maze.getTile(pos);
 
+        /*
+         * If no dot was eaten on this frame, we increase the "no dot" counter.
+         */
         if (!tile.hasDot()) {
+            noDotCounter.inc();
             return;
         }
 
+        /*
+         * Eating a big dot gives more points and a longer stop time.
+         */
         if (tile.hasBigDot()) {
             score += 50;
             pacMan.setStopTime(3);
+            /*
+             * Big dot triggers frightened mode.
+             */
+            activateFrightenedMode();
         } else {
             score += 10;
             pacMan.setStopTime(1);
         }
 
+        /*
+         * Remove the dot from the maze and update counters.
+         */
         maze.setTile(pos, tile.clearDot());
+        noDotCounter.reset();
+        specialDotCounter.inc();
     }
 
     /**
-     * Step 2 helper:
-     * if PacMan and a ghost are on the same tile, the life is over.
+     * Activates frightened mode for all ghosts that are not dead.
+     *
+     * This is a simplified  version:
+     * - every living ghost switches to FRIGHTENED
+     * - frightened duration depends on level
+     * - score chain resets to 0 eaten ghosts
+     */
+    protected void activateFrightenedMode() {
+        frightenedFramesRemaining = getFrightenedDurationFrames();
+        frightenedGhostsEaten = 0;
+
+        for (Ghost ghost : ghosts) {
+            if (ghost.getGhostState() != GhostState.DEAD) {
+                ghost.setGhostState(GhostState.FRIGHTENED);
+            }
+        }
+    }
+
+
+    /**
+     * Updates ghost mode timing.
+     *
+     * Two cases:
+     * 1. Frightened is active:
+     *    - count it down
+     *    - when it ends, surviving ghosts return to the global state
+     *
+     * 2. Otherwise:
+     *    - if timed switching is enabled, alternate CHASE / SCATTER
+     */
+    protected void updateGhostStatesOverTime() {
+        /*
+         * If state timing is disabled, we do not alternate CHASE/SCATTER.
+         * However frightened mode still counts down if active.
+         */
+        if (frightenedFramesRemaining > 0) {
+            frightenedFramesRemaining--;
+
+            /*
+             * Optional simplified blinking phase:
+             * near the end, switch frightened ghosts to FRIGHTENED_END.
+             */
+            if (frightenedFramesRemaining <= getFrightenedEndFrames()) {
+                for (Ghost ghost : ghosts) {
+                    if (ghost.getGhostState() == GhostState.FRIGHTENED) {
+                        ghost.setGhostState(GhostState.FRIGHTENED_END);
+                    }
+                }
+            }
+
+            /*
+             * End of frightened mode:
+             * all non-dead ghosts go back to the current global state.
+             */
+            if (frightenedFramesRemaining == 0) {
+                for (Ghost ghost : ghosts) {
+                    if (ghost.getGhostState() != GhostState.DEAD) {
+                        ghost.setGhostState(globalGhostState);
+                    }
+                }
+            }
+
+            return;
+        }
+
+        /*
+         * If timed state switching is disabled, stop here.
+         */
+        if (stateTimeDisabled) {
+            return;
+        }
+
+        ghostStateFrameCount++;
+
+        /*
+         * Alternate CHASE / SCATTER using simplified timing.
+         */
+        int duration = getCurrentGlobalGhostStateDurationFrames();
+        if (ghostStateFrameCount >= duration) {
+            ghostStateFrameCount = 0;
+
+            if (globalGhostState == GhostState.CHASE) {
+                globalGhostState = GhostState.SCATTER;
+            } else {
+                globalGhostState = GhostState.CHASE;
+            }
+
+            /*
+             * Apply the new state to all ghosts that are not frightened or dead.
+             */
+            for (Ghost ghost : ghosts) {
+                GhostState state = ghost.getGhostState();
+                if (state != GhostState.FRIGHTENED
+                        && state != GhostState.FRIGHTENED_END
+                        && state != GhostState.DEAD) {
+                    ghost.changeGhostState(globalGhostState);
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Checks collision PacMan / ghost.
+     *
+     * Cases:
+     * - ghost frightened -> ghost is eaten by PacMan, becomes DEAD, score bonus
+     * - ghost normal -> PacMan loses a life or the game ends
      */
     protected void checkGhostCollision() {
         if (pacMan == null) {
@@ -201,19 +385,59 @@ public abstract class AbstractBoard implements Board {
 
         TilePosition pacPos = pacMan.getCurrentTile();
         for (Ghost ghost : ghosts) {
-            if (pacPos.equals(ghost.getCurrentTile())) {
-                boardState = BoardState.LIFE_OVER;
-                return;
+            if (!pacPos.equals(ghost.getCurrentTile())) {
+                    continue;
+                }
+
+            GhostState ghostState = ghost.getGhostState();
+
+            /*
+            * If the ghost is frightened, PacMan eats it.
+            */
+            if (ghostState == GhostState.FRIGHTENED || ghostState == GhostState.FRIGHTENED_END) {
+                ghost.setGhostState(GhostState.DEAD);
+                frightenedGhostsEaten++;
+
+                /*
+                * Classic Pac-Man frightened scores:
+                */
+                switch (frightenedGhostsEaten) {
+                    case 1:
+                        score += 200;
+                        break;
+                    case 2:
+                        score += 400;
+                        break;
+                    case 3:
+                        score += 800;
+                        break;
+                    default:
+                        score += 1600;
+                        break;
+                }
+
+                /*
+                * Dead ghosts should head back to the pen entry.
+                * Full pen logic will be refined later.
+                */
+                ghost.setGhostPenState(GhostPenState.GET_IN);
+                continue;
             }
+
+            /*
+            * Otherwise PacMan is caught.
+            */
+            if (numberOfLives > 0) {
+                boardState = BoardState.LIFE_OVER;
+            } else {
+                boardState = BoardState.GAME_OVER;
+            }
+            return;
         }
     }
 
     /**
-     * Step 2 helper:
-     * if all dots are eaten, the level is over.
-     *
-     * We only switch to LEVEL_OVER if the board is still STARTED.
-     * This avoids overwriting LIFE_OVER if a collision already happened.
+     * If there are no more dots, the level is over.
      */
     protected void checkLevelOver() {
         if (boardState == BoardState.STARTED && maze.getNumberOfDots() == 0) {
@@ -222,52 +446,145 @@ public abstract class AbstractBoard implements Board {
     }
 
     /**
-     * Step 2 helper:
-     * ghosts are slower on SL tiles.
+     * Updates ghost speed depending on state and tile.
      *
-     * From the statement:
-     * - normal ghost speed in step 2 can be around 0.94
-     * - slow tunnel speed is 0.5 on SL
-     *
-     * This method is intentionally simple for step 2.
+     * Priority:
+     * - DEAD -> dead speed
+     * - frightened on tunnel tile -> tunnel speed
+     * - frightened -> frightened speed
+     * - inside pen / tunnel -> tunnel speed
+     * - otherwise -> normal ghost speed
      */
     protected void updateGhostSpeed(Ghost ghost) {
         Tile tile = maze.getTile(ghost.getCurrentTile());
-        if (tile == Tile.SL) {
-            ghost.setSpeed(0.5);
+        if (ghost.getGhostState() == GhostState.DEAD) {
+            ghost.setSpeed(getDeadGhostSpeed());
+            return;
+        }
+        if (tile == Tile.SL || ghost.getGhostPenState() != GhostPenState.OUT) {
+            ghost.setSpeed(getTunnelGhostSpeed());
         } else {
             ghost.setSpeed(getLevelGhostSpeed());
         }
+        if (ghost.getGhostState() == GhostState.FRIGHTENED
+                || ghost.getGhostState() == GhostState.FRIGHTENED_END) {
+            ghost.setSpeed(getFrightGhostSpeed());
+            return;
+        }
+
+        ghost.setSpeed(getLevelGhostSpeed());
     }
 
     /*********************************************************************/
     /**                    Step 3 / Step 4 stubs                        **/
-    /**          kept minimal so step 2 can compile cleanly             **/
+    /**                                                                 **/
     /*********************************************************************/
 
     @Override
     public int getLevel() {
-        return 1;
+        return level;
     }
 
+    /**
+     * Initializes a new level:
+     * - keeps current score
+     * - reloads the maze
+     * - resets actors to their initial positions
+     * - updates the level
+     */
     @Override
     public void initializeNewLevel(int level) throws PacManException {
-        throw new UnsupportedOperationException("Not implemented before step 3");
+        int oldScore = this.score;
+        int oldLives = this.numberOfLives;
+
+        this.level = level;
+        initialize();
+
+        this.score = oldScore;
+        this.numberOfLives = oldLives;
+        this.boardState = BoardState.INITIAL;
+
+        this.globalGhostState = GhostState.CHASE;
+        this.ghostStateFrameCount = 0;
+        this.frightenedFramesRemaining = 0;
+        this.frightenedGhostsEaten = 0;
     }
 
     @Override
     public void setNumberOfLives(int nbLives) {
-        throw new UnsupportedOperationException("Not implemented before step 3");
+        if (nbLives < 0) {
+            throw new IllegalArgumentException("Number of lives must be >= 0");
+        }
+        this.numberOfLives = nbLives;
     }
 
     @Override
     public int getNumberOfLives() {
-        return 0;
+        return numberOfLives;
     }
 
+
+    /**
+     * Initializes a new life:
+     * - one life is consumed
+     * - actors are reset to their initial positions
+     * - maze is NOT reloaded
+     * - score is kept
+     */
     @Override
     public void initializeNewLife() {
-        throw new UnsupportedOperationException("Not implemented before step 3");
+        if (numberOfLives > 0) {
+            numberOfLives--;
+        }
+
+        resetActorsToInitialPositions();
+        boardState = BoardState.INITIAL;
+
+        this.globalGhostState = GhostState.CHASE;
+        this.ghostStateFrameCount = 0;
+        this.frightenedFramesRemaining = 0;
+        this.frightenedGhostsEaten = 0;
+    }
+
+    /**
+     * Helper used by initializeNewLife().
+     *
+     * It resets actors to their initial positions without reloading the maze.
+     */
+    protected void resetActorsToInitialPositions() {
+        if (getGameType() == GameType.CLASSIC) {
+            pacMan = new PacMan(this, 112, 211);
+
+            ghosts.clear();
+
+            if (!disabledGhosts.contains(GhostType.BLINKY)) {
+                Blinky blinky = new Blinky(this, 112, 115);
+                blinky.setGhostPenState(GhostPenState.OUT);
+                ghosts.add(blinky);
+            }
+
+            if (!disabledGhosts.contains(GhostType.PINKY)) {
+                Pinky pinky = new Pinky(this, 112, 139);
+                pinky.setGhostPenState(GhostPenState.IN);
+                ghosts.add(pinky);
+            }
+
+            if (!disabledGhosts.contains(GhostType.INKY)) {
+                Inky inky = new Inky(this, 96, 139);
+                inky.setGhostPenState(GhostPenState.IN);
+                ghosts.add(inky);
+            }
+
+            if (!disabledGhosts.contains(GhostType.CLYDE)) {
+                Clyde clyde = new Clyde(this, 128, 139);
+                clyde.setGhostPenState(GhostPenState.IN);
+                ghosts.add(clyde);
+            }
+
+        } else {
+            pacMan = new PacMan(this, 35, 75);
+            ghosts.clear();
+        }
     }
 
     @Override
@@ -275,101 +592,164 @@ public abstract class AbstractBoard implements Board {
         return getGhost(ghostType) != null;
     }
 
+
+    /**
+     * Disables a ghost before board initialization.
+     */
     @Override
     public void disableGhost(GhostType ghostType) {
-        throw new UnsupportedOperationException("Not implemented before step 3");
+        if (!disabledGhosts.contains(ghostType)) {
+            disabledGhosts.add(ghostType);
+        }
     }
 
     @Override
     public void disableStateTime() {
-        throw new UnsupportedOperationException("Not implemented before step 3");
+        this.stateTimeDisabled = true;
     }
 
     @Override
     public Direction getRandomDirection() {
-        return Direction.LEFT;
+        Direction[] dirs = Direction.values();
+        return dirs[random.nextInt(dirs.length)];
     }
 
     @Override
     public TilePosition penEntry() {
-        return null;
+        return new TilePosition(14, 13);
     }
 
     @Override
     public int minYPen() {
-        return 0;
+        return 134;
     }
 
     @Override
     public int maxYPen() {
-        return 0;
+        return 144;
     }
 
     @Override
     public int penGhostXPosition(GhostType type) {
-        return 0;
+        switch (type) {
+            case BLINKY:
+            case PINKY:
+                return 112;
+            case INKY:
+                return 96;
+            case CLYDE:
+                return 128;
+            default:
+                return 112;
+        }
     }
 
     @Override
     public int penGhostYPosition(GhostType type) {
-        return 0;
+        return 139;
     }
 
     @Override
     public int outPenXPosition() {
-        return 0;
+        return 112;
     }
 
     @Override
     public int outPenYPosition() {
-        return 0;
+        return 115;
     }
 
     @Override
     public Counter noDotCounter() {
-        return null;
+        return noDotCounter;
     }
 
     @Override
     public Counter specialDotCounter() {
-        return null;
+        return specialDotCounter;
     }
 
     /**
-     * PacMan speed for level 1.
-     * For your current step-2 tests, speed 1.0 is enough.
+     * PacMan speed for level.
      */
     @Override
     public double getLevelPacManSpeed() {
-        return 1.0;
+        if (level == 1) return 1.0;
+        if (level <= 4) return 1.14;
+        if (level <= 20) return 1.26;
+        return 1.14;
     }
 
     @Override
     public double getFrightPacManSpeed() {
-        return 1.0;
+        if (level == 1) return 1.14;
+        if (level <= 4) return 1.20;
+        return 1.26;
     }
 
     /**
-     * Blinky normal speed for level 1 in step 2.
+     * Ghost normal speed for level.
      */
     @Override
     public double getLevelGhostSpeed() {
-        return 0.94;
+        if (level == 1) return 0.94;
+        if (level <= 4) return 1.07;
+        return 1.20;
     }
 
     @Override
     public double getTunnelGhostSpeed() {
-        return 0.5;
+        if (level == 1) return 0.50;
+        if (level <= 4) return 0.57;
+        return 0.63;
     }
 
     @Override
     public double getFrightGhostSpeed() {
-        return 0.5;
+        if (level == 1) return 0.63;
+        if (level <= 4) return 0.69;
+        return 0.75;
     }
 
     @Override
     public double getDeadGhostSpeed() {
-        return 1.0;
+        return 1.26;
+    }
+
+    /**
+     * Simplified frightened duration in frames.
+     *
+     * We convert seconds to frames using 60 fps.
+     */
+    protected int getFrightenedDurationFrames() {
+        /*
+         * Simple level-based approximation:
+         * - level 1: 6 seconds
+         * - levels 2-4: 5 seconds
+         * - higher: 3 seconds
+         */
+        if (level == 1) return 6 * 60;
+        if (level <= 4) return 5 * 60;
+        return 3 * 60;
+    }
+
+    /**
+     * Simplified blinking duration at the end of frightened mode.
+     */
+    protected int getFrightenedEndFrames() {
+        return 2 * 60;
+    }
+
+    /**
+     * Duration of the current CHASE / SCATTER phase in frames.
+     *
+     * This is a simplified approximation for step 3.5.
+     */
+    protected int getCurrentGlobalGhostStateDurationFrames() {
+        if (globalGhostState == GhostState.SCATTER) {
+            return 7 * 60;
+        }
+        return 20 * 60;
     }
 
     @Override
