@@ -258,8 +258,16 @@ public final class MazeImpl implements Maze {
         int count = 0;
         for (int line = 0; line < height; line++) {
             for (int col = 0; col < width; col++) {
-                String n = tiles[line][col].name();
-                if ("SD".equals(n) || "BD".equals(n)) {
+                /*
+                * We rely on Tile.hasDot() so that every tile containing a dot
+                * is counted consistently in one single place.
+                *
+                * This includes:
+                * - SD : small dot
+                * - BD : big dot
+                * - ND : small dot on a "no up turn" tile
+                */
+                if (tiles[line][col].hasDot()) {
                     count++;
                 }
             }

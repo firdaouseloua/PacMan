@@ -227,22 +227,34 @@ public abstract class AbstractActor implements Actor {
     }
 
     /**
-     * Moves the actor by one pixel in the given direction.
+     * Moves the actor according to its current speed.
+     *
+     * Step 2 rule:
+     * - the real position is stored as a double
+     * - the displayed integer position is the truncated value
+     *
+     * Example: if realX = 34.5 then x = 34
      */
     protected void moveOnePixel(Direction dir) {
-        x += dir.getDx();
-        y += dir.getDy();
+        realX += dir.getDx() * speed;
+        realY += dir.getDy() * speed;
 
-        int pixelWidth = getMaze().getPixelWidth();
+        double pixelWidth = getMaze().getPixelWidth();
 
-        if (x < 0) {
-            x = pixelWidth - 1;
-        } else if (x >= pixelWidth) {
-            x = 0;
+        /*
+        * Horizontal wrap-around must be applied on the real position too.
+        */
+        if (realX < 0) {
+            realX = pixelWidth - 1;
+        } else if (realX >= pixelWidth) {
+            realX = 0;
         }
 
-        realX = x;
-        realY = y;
+        /*
+        * The displayed integer coordinates are truncated versions of the real coordinates.
+        */
+        x = (int) realX;
+        y = (int) realY;
     }
 
     /**

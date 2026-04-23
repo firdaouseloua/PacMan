@@ -40,16 +40,13 @@ public class PacMan extends AbstractActor {
     @Override
     public void start() {
         /*
-        * We intentionally do NOT reset intention here.
+        * We do not reset intention here because some tests set an intention
+        * before startActors() and expect it to be preserved.
         *
-        * Why:
-        * some tests set PacMan's intention before calling startActors(),
-        * and they expect this intention to be preserved when the game starts.
-        *
-        * If no intention was set before start, it is already null anyway.
+        * We also do not reset speed here because some step-2 tests set
+        * the speed before startActors() and expect that value to remain active.
         */
         this.blocked = false;
-        this.speed = 1.0;
         this.stopTime = 0;
         this.realX = x;
         this.realY = y;

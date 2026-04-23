@@ -4,6 +4,7 @@ import fr.upsaclay.bibs.pacman.GameType;
 import fr.upsaclay.bibs.pacman.PacManException;
 import fr.upsaclay.bibs.pacman.model.Direction;
 import fr.upsaclay.bibs.pacman.model.board.Board;
+import fr.upsaclay.bibs.pacman.model.board.BoardState;
 
 /**
  * Simple controller without view, used for testing or simulation.
@@ -50,50 +51,90 @@ public class SimpleController implements Controller {
 
     @Override
     public void receiveAction(GameAction action) throws PacManException {
+        /*
+        * We first protect against the case where the board is not initialized yet.
+        */
+        if (board == null) {
+            throw new ForbiddenActionException(action);
+        }
+
+        BoardState state = board.getBoardState();
+
+        /*
+        * Actions allowed when the level is over: only NEXT_LEVEL should be accepted.
+        */
+        if (state == BoardState.LEVEL_OVER) {
+            if (action == GameAction.NEXT_LEVEL) {
+                initialize();
+                gameStarted = false;
+                paused = false;
+                return;
+            }
+            throw new ForbiddenActionException(action);
+        }
+
+        /*
+        * Actions allowed when a life is over: only NEW_GAME should be accepted in step 2.
+        */
+        if (state == BoardState.LIFE_OVER) {
+            if (action == GameAction.NEW_GAME) {
+                initialize();
+                gameStarted = false;
+                paused = false;
+                return;
+            }
+            throw new ForbiddenActionException(action);
+        }
+
+        /*
+        * Normal state machine for INITIAL / STARTED gameplay.
+        */
         switch (action) {
             case START:
                 if (!gameStarted) {
                     gameStarted = true;
                     paused = false;
-                    if (board != null) {
-                        board.startActors(); 
-                    }
-                }
-                else{
+                    board.startActors();
+                } else {
                     throw new ForbiddenActionException(action);
                 }
                 break;
+
             case PAUSE:
-                if (gameStarted && !paused) {
+                if (gameStarted && !paused && state == BoardState.STARTED) {
                     paused = true;
                 } else {
                     throw new ForbiddenActionException(action);
                 }
                 break;
+
             case RESUME:
-                if (gameStarted && paused) {
+                if (gameStarted && paused && state == BoardState.STARTED) {
                     paused = false;
                 } else {
                     throw new ForbiddenActionException(action);
                 }
                 break;
+
             case NEXT_FRAME:
-                if (gameStarted && !paused) {
+                if (gameStarted && !paused && state == BoardState.STARTED) {
                     board.nextFrame();
                 } else {
                     throw new ForbiddenActionException(action);
                 }
                 break;
+
             case UP:
             case LEFT:
             case DOWN:
             case RIGHT:
-                if (gameStarted && !paused && (board.getPacMan() != null)) {
+                if (gameStarted && !paused && state == BoardState.STARTED && board.getPacMan() != null) {
                     board.getPacMan().setIntention(actionToDirection(action));
                 } else {
                     throw new ForbiddenActionException(action);
                 }
                 break;
+
             default:
                 throw new ForbiddenActionException(action);
         }
