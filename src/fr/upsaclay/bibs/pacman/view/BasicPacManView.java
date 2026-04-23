@@ -115,42 +115,48 @@ public class BasicPacManView extends JFrame implements PacManView {
     }
 
     private void onKeyPressed(KeyEvent e) throws PacManException {
-    if (controller == null) {
-        return;
-    }
-
-    GameAction action = null;
-    switch (e.getKeyCode()) {
-        case KeyEvent.VK_UP:
-            action = GameAction.UP;
-            break;
-        case KeyEvent.VK_DOWN:
-            action = GameAction.DOWN;
-            break;
-        case KeyEvent.VK_LEFT:
-            action = GameAction.LEFT;
-            break;
-        case KeyEvent.VK_RIGHT:
-            action = GameAction.RIGHT;
-            break;
-        case KeyEvent.VK_ENTER:
-            action = GameAction.START;
-            break;
-        case KeyEvent.VK_P:
-            action = GameAction.PAUSE;
-            break;
-        case KeyEvent.VK_R:
-            action = GameAction.RESUME;
-            break;
-    }
-
-    if (action != null) {
-        try {
-            controller.receiveAction(action);
-        } catch (ForbiddenActionException error) {
-            throw new ForbiddenActionException(action);
+        if (controller == null) {
+            return;
         }
-    }
+
+        GameAction action = null;
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_UP:
+                action = GameAction.UP;
+                break;
+            case KeyEvent.VK_DOWN:
+                action = GameAction.DOWN;
+                break;
+            case KeyEvent.VK_LEFT:
+                action = GameAction.LEFT;
+                break;
+            case KeyEvent.VK_RIGHT:
+                action = GameAction.RIGHT;
+                break;
+            case KeyEvent.VK_ENTER:
+                action = GameAction.START;
+                break;
+            case KeyEvent.VK_P:
+                action = GameAction.PAUSE;
+                break;
+            case KeyEvent.VK_R:
+                action = GameAction.RESUME;
+                break;
+            case KeyEvent.VK_N:
+                action = GameAction.NEW_GAME;
+                break;
+            case KeyEvent.VK_L:
+                action = GameAction.NEXT_LEVEL;
+                break;
+        }
+
+        if (action != null) {
+            try {
+                controller.receiveAction(action);
+            } catch (ForbiddenActionException error) {
+                throw new ForbiddenActionException(action);
+            }
+        }
     }
 
     @Override
@@ -160,6 +166,7 @@ public class BasicPacManView extends JFrame implements PacManView {
             gamePanel.updatePreferredSize();
             gamePanel.initGridTextures();
             pack();
+            setLocationRelativeTo(null);
         }
     }
 
@@ -207,15 +214,30 @@ public class BasicPacManView extends JFrame implements PacManView {
     }
 
     private String getStatusText() {
+
+        if (board != null) {
+            BoardState state = board.getBoardState();
+
+            if (state == BoardState.LIFE_OVER) {
+                return "Press N for a new game";
+            }
+            if (state == BoardState.LEVEL_OVER) {
+                return "Press L for next level";
+            }
+            if (state == BoardState.GAME_OVER) {
+                return "Game over";
+            }
+        }
+
         if (viewLayout == PacManLayout.INIT) {
-            return "Press ENTER to start";
+                return "Press ENTER to start";
         } else if (viewLayout == PacManLayout.GAME_ON) {
             return "Pause is possible : Press P";
         } else if (viewLayout == PacManLayout.PAUSE) {
             return "Resume is required : Press R";
         }
         return "";
-    }
+        }
 
     private void doNextFrame() throws PacManException {
         if (controller == null || viewLayout != PacManLayout.GAME_ON) {
@@ -239,12 +261,12 @@ public class BasicPacManView extends JFrame implements PacManView {
 private class GamePanel extends JPanel {
         
     private final Map<Tile, BufferedImage> tileTextures = new EnumMap<>(Tile.class);
-    private final Map<String, BufferedImage> actorTextures = new HashMap<>();    
+    private final Map<String, BufferedImage> actorTextures = new HashMap<>();
     private BufferedImage[][] gridTextures; 
 
     public GamePanel() {
         setBackground(Color.BLACK);
-        setPreferredSize(new Dimension(1200, 1800)); 
+        setPreferredSize(new Dimension(1200, 1800));
         setFocusable(true);
         loadTileTextures();
         loadActorTextures();

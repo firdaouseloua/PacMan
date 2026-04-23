@@ -41,8 +41,16 @@ public class VisualController extends SimpleController {
         super.receiveAction(action);
         switch (action) {
             case START:
+                /*
+                * START has already been handled by the parent controller:
+                * - gameStarted becomes true
+                * - board.startActors() is called
+                *
+                * So here we only need to switch the visual layout
+                * and refresh the view.
+                */
                 view.setLayout(PacManLayout.GAME_ON);
-                initializeNewGame();
+                view.update();
                 break;
             case PAUSE:
                 view.setLayout(PacManLayout.PAUSE);
