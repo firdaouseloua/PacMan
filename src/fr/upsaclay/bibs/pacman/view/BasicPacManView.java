@@ -620,7 +620,6 @@ private class GamePanel extends JPanel {
         int titleY = height / 3;
         g.drawString(title, titleX, titleY);
         
-        // Draw the final score underneath
         g.setColor(Color.WHITE);
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 12));
         String scoreText = "Current Score: " + (board != null ? board.getScore() : 0);
