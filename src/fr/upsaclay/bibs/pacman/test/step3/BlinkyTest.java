@@ -41,7 +41,7 @@ public class BlinkyTest {
     public void testSetGetXY() throws PacManException {
         Board board = Board.createBoard(GameType.CLASSIC);
         board.initialize();
-        Actor blinky = board.getPacMan();
+        Actor blinky = board.getGhost(GhostType.BLINKY);
         blinky.setPosition(3,3);
         assertEquals(blinky.getX(), 3);
         assertEquals(blinky.getY(), 3);
@@ -51,7 +51,7 @@ public class BlinkyTest {
     public void testGetCurrentTile() throws PacManException {
         Board board = Board.createBoard(GameType.CLASSIC);
         board.initialize();
-        Actor blinky = board.getPacMan();
+        Actor blinky = board.getGhost(GhostType.BLINKY);
         blinky.setPosition(3,3);
         assertEquals(blinky.getX(), 3);
         assertEquals(blinky.getY(), 3);
@@ -182,7 +182,7 @@ public class BlinkyTest {
         // It should be down again
         assertEquals(blinky.getDirection(), Direction.DOWN);
         // It should be in (23, 6) (just above pacman)
-        assertEquals(blinky.getCurrentTile(), new TilePosition(23, 6));
+        assertEquals( new TilePosition(23, 6), blinky.getCurrentTile());
     }
 
     /**

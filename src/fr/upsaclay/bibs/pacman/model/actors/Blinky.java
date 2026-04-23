@@ -23,11 +23,24 @@ public class Blinky extends AbstractGhost {
      */
     @Override
     public TilePosition getTarget() {
-        return getBoard().getPacMan().getCurrentTile();
+        switch (ghostState) {
+            case CHASE:
+                return getBoard().getPacMan().getCurrentTile();
+            case SCATTER:
+                return new TilePosition(0, 25);
+            case FRIGHTENED:
+            case FRIGHTENED_END:
+                return null;
+
+            case DEAD:
+                return getBoard().penEntry();
+            default:
+                return getBoard().getPacMan().getCurrentTile();
+        }
     }
 
     @Override
     protected TilePosition getScatterTarget() {
-        return new TilePosition(0, getMaze().getWidth() - 1);
+        return new TilePosition(0, 25);
     }
 }
