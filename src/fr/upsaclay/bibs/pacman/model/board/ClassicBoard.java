@@ -82,7 +82,6 @@ public class ClassicBoard extends AbstractBoard {
                 clyde.setSpeed(getTunnelGhostSpeed());
                 ghosts.add(clyde);
             }
->>>>>>> 3a71373 (sauvegarde avant pull)
 
         } catch (Exception e) {
             throw new PacManException("Error while initializing classic board");
