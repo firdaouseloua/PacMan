@@ -2,7 +2,10 @@ package fr.upsaclay.bibs.pacman.bonus;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
-
+import java.io.File;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;

@@ -2,6 +2,7 @@ package fr.upsaclay.bibs.pacman.model.board;
 
 import fr.upsaclay.bibs.pacman.GameType;
 import fr.upsaclay.bibs.pacman.PacManException;
+import fr.upsaclay.bibs.pacman.bonus.SoundPlayer;
 import fr.upsaclay.bibs.pacman.model.actors.PacMan;
 import fr.upsaclay.bibs.pacman.model.maze.Maze;
 
@@ -56,4 +57,9 @@ public class TestBoard extends AbstractBoard {
     public void startActors() {
         super.startActors();
     }
+
+    @Override
+    public SoundPlayer getSoundPlayer(){
+        return soundPlayer;
+    };
 }

@@ -35,7 +35,7 @@ public class VisualController extends SimpleController {
     public void initializeNewGame() throws PacManException {
         super.initializeNewGame();
         view.setBoard(getBoard());
-        view.setLayout(PacManLayout.INIT);
+        view.setLayout(PacManLayout.GAME_ON);
         view.update();
     }
 

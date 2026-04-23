@@ -7,6 +7,7 @@ import fr.upsaclay.bibs.pacman.model.actors.*;
 import fr.upsaclay.bibs.pacman.model.maze.Maze;
 import fr.upsaclay.bibs.pacman.model.maze.TilePosition;
 import fr.upsaclay.bibs.pacman.model.maze.Tile;
+import fr.upsaclay.bibs.pacman.bonus.SoundPlayer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -86,6 +87,8 @@ public abstract class AbstractBoard implements Board {
     /** Number of ghosts eaten during the current frightened sequence. */
     protected int frightenedGhostsEaten;
 
+    protected SoundPlayer soundPlayer;
+
 
     /**
      * Base constructor for all boards.
@@ -112,12 +115,18 @@ public abstract class AbstractBoard implements Board {
         this.disabledGhosts = new ArrayList<>();
         this.noDotCounter = new Counter(Integer.MAX_VALUE);
         this.specialDotCounter = new Counter(Integer.MAX_VALUE);
-
+        this.soundPlayer = new SoundPlayer();
         this.globalGhostState = GhostState.CHASE;
         this.ghostStateFrameCount = 0;
         this.frightenedFramesRemaining = 0;
         this.frightenedGhostsEaten = 0;
     }
+
+    @Override
+    public SoundPlayer getSoundPlayer(){
+        return soundPlayer;
+    };
+
 
     @Override
     public abstract GameType getGameType();
@@ -791,4 +800,6 @@ public abstract class AbstractBoard implements Board {
     public List<BoardEvent> getCurrentEvents() {
         return Collections.emptyList();
     }
+
+    
 }

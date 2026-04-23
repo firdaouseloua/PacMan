@@ -43,7 +43,6 @@ import fr.upsaclay.bibs.pacman.model.maze.Maze;
 import fr.upsaclay.bibs.pacman.model.maze.Tile;
 
 
-
 public class BasicPacManView extends JFrame implements PacManView {
 
     private static final int TIMER_DELAY_MS = 17;
@@ -219,7 +218,7 @@ public class BasicPacManView extends JFrame implements PacManView {
             BoardState state = board.getBoardState();
 
             if (state == BoardState.LIFE_OVER) {
-                return "Press N for a new game";
+                return "Press N to continue";
             }
             if (state == BoardState.LEVEL_OVER) {
                 return "Press L for next level";
@@ -245,12 +244,29 @@ public class BasicPacManView extends JFrame implements PacManView {
         }
         try {
             controller.receiveAction(GameAction.NEXT_FRAME);
+
             if (board != null) {
                 BoardState currentState = board.getBoardState();
-                if (currentState == BoardState.LIFE_OVER || currentState == BoardState.LEVEL_OVER || currentState == BoardState.GAME_OVER) {
-                        timer.stop(); 
-                        gamePanel.repaint(); 
-                    }
+                if (currentState == BoardState.GAME_OVER) {
+                timer.stop();
+                board.getSoundPlayer().stop(); 
+                board.getSoundPlayer().play("resources/sounds/get_a_life.wav"); 
+                gamePanel.repaint(); 
+                }
+                else if (currentState == BoardState.LEVEL_OVER) {
+                    timer.stop();
+                    board.getSoundPlayer().stop(); 
+                    board.getSoundPlayer().play("resources/sounds/thank_you_next.wav"); 
+                    gamePanel.repaint(); 
+                }
+                
+                // Check for Life Lost (but not game over)
+                else if (currentState == BoardState.LIFE_OVER) {
+                    timer.stop();
+                    board.getSoundPlayer().stop();
+                    board.getSoundPlayer().play("resources/sounds/explosion.wav");
+                    gamePanel.repaint();
+                }
             }
         } catch (PacManException e) {
             throw new PacManException(e);
@@ -482,7 +498,6 @@ private class GamePanel extends JPanel {
         }
 
         Actor pacman = board.getPacMan();
-        Ghost blinky = board.getGhost(GhostType.BLINKY);
 
         if (pacman != null) {
             String dir = pacman.getDirection().toString().toUpperCase(); 

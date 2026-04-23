@@ -2,6 +2,7 @@ package fr.upsaclay.bibs.pacman.model.board;
 
 import fr.upsaclay.bibs.pacman.GameType;
 import fr.upsaclay.bibs.pacman.PacManException;
+import fr.upsaclay.bibs.pacman.bonus.SoundPlayer;
 import fr.upsaclay.bibs.pacman.model.Direction;
 import fr.upsaclay.bibs.pacman.model.actors.*;
 import fr.upsaclay.bibs.pacman.model.maze.Maze;
@@ -308,4 +309,6 @@ public interface Board {
      * @return a list (might be empty)
      */
     List<BoardEvent> getCurrentEvents();
+
+    SoundPlayer getSoundPlayer();
 }

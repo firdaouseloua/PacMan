@@ -36,15 +36,15 @@ public class SimpleController implements Controller {
 
     @Override
     public void initialize() throws PacManException {
-        initializeNewGame();
-    }
-
-    @Override
-    public void initializeNewGame() throws PacManException {
         try {
+            if (board != null && board.getSoundPlayer() != null) {
+                board.getSoundPlayer().stop();
+            }
             this.board = Board.createBoard(this.gameType);
             this.board.initialize();
 
+            this.board.getSoundPlayer().playLoop("resources/sounds/start_screen.wav");
+            
             /* Step 3 default values for a fresh game.*/
             this.board.setNumberOfLives(2);
             /*
@@ -60,6 +60,17 @@ public class SimpleController implements Controller {
         }
     }
 
+    @Override
+    public void initializeNewGame() throws PacManException {
+            if (board != null && board.getSoundPlayer() != null) {
+                board.getSoundPlayer().stop();
+            }
+            this.board.initializeNewLife();
+
+            this.board.getSoundPlayer().playLoop("resources/sounds/game_main.wav");
+            this.gameStarted = true;
+            this.paused = false;
+        }
     @Override
     public void setGameType(GameType gameType) {
         this.gameType = gameType;
@@ -85,20 +96,6 @@ public class SimpleController implements Controller {
         BoardState state = board.getBoardState();
 
         /*
-         * LEVEL_OVER:
-         * only NEXT_LEVEL should be accepted.
-         */
-        if (state == BoardState.LEVEL_OVER) {
-            if (action == GameAction.NEXT_LEVEL) {
-                board.initializeNewLevel(board.getLevel()+1);
-                gameStarted = true;
-                paused = false;
-                return;
-            }
-            throw new ForbiddenActionException(action);
-        }
-
-        /*
          * LIFE_OVER:
          * we now restart the game flow with a NEW_GAME action in the visual version,
          * but if there are still lives left, we can also reinitialize the current life.
@@ -118,6 +115,24 @@ public class SimpleController implements Controller {
         if (state == BoardState.GAME_OVER) {
             if (action == GameAction.NEW_GAME) {
                 initializeNewGame();
+                board.getSoundPlayer().stop();
+                board.getSoundPlayer().playLoop("resources/sounds/start_screen.wav");
+                return;
+            }
+            throw new ForbiddenActionException(action);
+        }
+        
+        /*
+         * LEVEL_OVER:
+         * only NEXT_LEVEL should be accepted.
+         */
+        if (state == BoardState.LEVEL_OVER) {
+            if (action == GameAction.NEXT_LEVEL) {
+                board.initializeNewLevel(board.getLevel()+1);
+                board.getSoundPlayer().stop();
+                board.getSoundPlayer().playLoop("resources/sounds/game_main.wav");
+                gameStarted = true;
+                paused = false;
                 return;
             }
             throw new ForbiddenActionException(action);
@@ -131,6 +146,8 @@ public class SimpleController implements Controller {
                 if (!gameStarted) {
                     gameStarted = true;
                     paused = false;
+                    board.getSoundPlayer().stop();
+                    board.getSoundPlayer().playLoop("resources/sounds/game_main.wav");
                     board.startActors();
                 } else {
                     throw new ForbiddenActionException(action);
@@ -140,6 +157,8 @@ public class SimpleController implements Controller {
             case PAUSE:
                 if (gameStarted && !paused && state == BoardState.STARTED) {
                     paused = true;
+                    board.getSoundPlayer().stop();
+                    board.getSoundPlayer().playLoop("resources/sounds/start_screen.wav");
                 } else {
                     throw new ForbiddenActionException(action);
                 }
@@ -147,6 +166,8 @@ public class SimpleController implements Controller {
 
             case RESUME:
                 if (gameStarted && paused && state == BoardState.STARTED) {
+                    board.getSoundPlayer().stop();
+                    board.getSoundPlayer().playLoop("resources/sounds/game_main.wav");
                     paused = false;
                 } else {
                     throw new ForbiddenActionException(action);
