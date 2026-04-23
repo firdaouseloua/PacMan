@@ -564,7 +564,6 @@ public abstract class AbstractBoard implements Board {
 
         resetActorsToInitialPositions();
         boardState = BoardState.INITIAL;
-
         this.globalGhostState = GhostState.SCATTER;
         this.ghostStateFrameCount = 0;
         this.frightenedFramesRemaining = 0;

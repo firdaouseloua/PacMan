@@ -65,10 +65,18 @@ public class VisualController extends SimpleController {
             case NEW_GAME:
                 /*
                  * A new game is created in the parent controller.
-                 * We reconnect the new board to the view and return to INIT.
+                 * We reconnect the new board to the view and return to INIT if game over.
+                 * If life lost but not game over, we return to the GAME_ON layout instantly.
                  */
+                BoardState stateBefore = getBoard().getBoardState();
+                super.receiveAction(action);
                 view.setBoard(getBoard());
-                view.setLayout(PacManLayout.INIT);
+                if (stateBefore == BoardState.LIFE_OVER) {
+                    view.setLayout(PacManLayout.GAME_ON);
+                } else {
+                    view.setLayout(PacManLayout.INIT);
+                }
+                
                 view.update();
                 break;
 

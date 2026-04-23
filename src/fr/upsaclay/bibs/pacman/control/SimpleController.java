@@ -66,7 +66,7 @@ public class SimpleController implements Controller {
                 board.getSoundPlayer().stop();
             }
             this.board.initializeNewLife();
-
+            this.board.startActors();
             this.board.getSoundPlayer().playLoop("resources/sounds/game_main.wav");
             this.gameStarted = true;
             this.paused = false;
@@ -114,7 +114,7 @@ public class SimpleController implements Controller {
          */
         if (state == BoardState.GAME_OVER) {
             if (action == GameAction.NEW_GAME) {
-                initializeNewGame();
+                initialize();
                 board.getSoundPlayer().stop();
                 board.getSoundPlayer().playLoop("resources/sounds/start_screen.wav");
                 return;
