@@ -13,7 +13,7 @@ public class VisualController extends SimpleController {
 
     private PacManView view;
 
-    public VisualController() throws PacManException {
+    public VisualController() throws PacManException{
         super();
         this.view = new BasicPacManView();
     }

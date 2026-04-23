@@ -17,9 +17,10 @@ public class SimpleControllerTest {
 
     /**
      * Test that the simple controller can be created without errors
+     * @throws PacManException 
      */
     @Test
-    public void testGetController() {
+    public void testGetController() throws PacManException {
         Controller simple = Controller.getController(InterfaceMode.SIMPLE);
         assertNotNull(simple);
     }
