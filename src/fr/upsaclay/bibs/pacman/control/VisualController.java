@@ -1,6 +1,7 @@
 package fr.upsaclay.bibs.pacman.control;
 
 import fr.upsaclay.bibs.pacman.PacManException;
+import fr.upsaclay.bibs.pacman.model.board.BoardState;
 import fr.upsaclay.bibs.pacman.view.BasicPacManView;
 import fr.upsaclay.bibs.pacman.view.PacManLayout;
 import fr.upsaclay.bibs.pacman.view.PacManView;

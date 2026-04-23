@@ -38,13 +38,12 @@ import fr.upsaclay.bibs.pacman.model.actors.Ghost;
 import fr.upsaclay.bibs.pacman.model.actors.GhostState;
 import fr.upsaclay.bibs.pacman.model.actors.GhostType;
 import fr.upsaclay.bibs.pacman.model.board.Board;
+import fr.upsaclay.bibs.pacman.model.board.BoardState;
 import fr.upsaclay.bibs.pacman.model.maze.Maze;
 import fr.upsaclay.bibs.pacman.model.maze.Tile;
 
-/**
- * Basic Swing implementation of the PacMan view.
- * It displays the maze as colored squares and uses a timer for NEXT_FRAME.
- */
+
+
 public class BasicPacManView extends JFrame implements PacManView {
 
     private static final int TIMER_DELAY_MS = 17;
@@ -224,6 +223,13 @@ public class BasicPacManView extends JFrame implements PacManView {
         }
         try {
             controller.receiveAction(GameAction.NEXT_FRAME);
+            if (board != null) {
+                BoardState currentState = board.getBoardState();
+                if (currentState == BoardState.LIFE_OVER || currentState == BoardState.LEVEL_OVER) {
+                        timer.stop(); 
+                        gamePanel.repaint(); 
+                    }
+            }
         } catch (PacManException e) {
             throw new PacManException(e);
         }
@@ -399,6 +405,11 @@ private class GamePanel extends JPanel {
             drawStartPage(g2d);
             return;
         }
+
+        if (board != null && board.getBoardState() == BoardState.LEVEL_OVER) {
+            drawGameOverPage(g2d);
+            return; 
+        }
         
         if (board == null || board.getMaze() == null) {
             return;
@@ -454,7 +465,14 @@ private class GamePanel extends JPanel {
                 int drawX = pacman.getX() - (img.getWidth() / 2);
                 int drawY = pacman.getY() - (img.getHeight() / 2);
 
-                g2d.drawImage(img, drawX, drawY, null);
+                boolean isMouthOpen = (System.currentTimeMillis() / 150) % 2 == 0;
+
+                if (isMouthOpen) {
+                    g2d.drawImage(img, drawX, drawY, null);
+                } else {
+                    g2d.setColor(new Color(0xFFFFFF00));
+                    g2d.fillOval(drawX, drawY, img.getWidth(), img.getHeight());
+                }
             }
         }
 
@@ -469,6 +487,12 @@ private class GamePanel extends JPanel {
                 g2d.drawImage(img, drawX, drawY, null);
             }
         }
+
+
+        if (board != null && board.getBoardState() == BoardState.LIFE_OVER) {
+            drawLifeOver(g2d);
+        }
+
         drawStatusText(g2d);
     }
     
@@ -508,6 +532,52 @@ private class GamePanel extends JPanel {
         g.drawString(instruction, instrX, instrY);
     }
 
+    private void drawLifeOver(Graphics2D g) {
+            String text = "LIFE OVER!";
+            g.setColor(Color.YELLOW);
+            g.setFont(new Font("Century Schoolbook", Font.BOLD, 12));
+            
+            FontMetrics fm = g.getFontMetrics();
+            int width = getWidth() / SCALE;
+            int height = getHeight() / SCALE;
+            
+            int x = (width - fm.stringWidth(text)) / 2;
+            int y = height / 2;
+            
+            g.setColor(Color.BLACK);
+            g.fillRect(x - 5, y - 12, fm.stringWidth(text) + 10, 16);
+            
+            g.setColor(Color.YELLOW);
+            g.drawString(text, x, y);
+        }
+
+
+    private void drawGameOverPage(Graphics2D g) {
+        int width = getWidth() / SCALE;
+        int height = getHeight() / SCALE;
+        
+        // Fill the whole screen with black
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, width, height);
+        
+        // Draw the Big Red "LEVEL COMPLETE" or "GAME OVER" text
+        g.setColor(Color.RED);
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 16));
+        String title = "GAME OVER";
+        FontMetrics fm = g.getFontMetrics();
+        int titleX = (width - fm.stringWidth(title)) / 2;
+        int titleY = height / 3;
+        g.drawString(title, titleX, titleY);
+        
+        // Draw the final score underneath
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 12));
+        String scoreText = "Final Score: " + (board != null ? board.getScore() : 0);
+        fm = g.getFontMetrics();
+        int scoreX = (width - fm.stringWidth(scoreText)) / 2;
+        int scoreY = height / 2;
+        g.drawString(scoreText, scoreX, scoreY);
+    }
 }
 
 }

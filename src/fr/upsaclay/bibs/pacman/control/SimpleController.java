@@ -55,6 +55,9 @@ public class SimpleController implements Controller {
                 if (!gameStarted) {
                     gameStarted = true;
                     paused = false;
+                    if (board != null) {
+                        board.startActors(); 
+                    }
                 }
                 else{
                     throw new ForbiddenActionException(action);
@@ -92,7 +95,6 @@ public class SimpleController implements Controller {
                 }
                 break;
             default:
-                /* TODO STEP 2 3 4 */
                 throw new ForbiddenActionException(action);
         }
     }
