@@ -216,7 +216,7 @@ public abstract class AbstractBoard implements Board {
 
     @Override
     public List<Ghost> getGhosts() {
-        return ghosts;
+        return Collections.unmodifiableList(ghosts);
     }
 
     /**
