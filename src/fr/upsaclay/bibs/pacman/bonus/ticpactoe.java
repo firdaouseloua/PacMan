@@ -31,6 +31,8 @@ public class ticpactoe extends JDialog {
     private boolean pacmanWon = false;
     private boolean draw = false;
 
+    private boolean isProcessingMove = false;
+
     Timer timer;
     int timeLeft = 2;
 
@@ -74,18 +76,7 @@ public class ticpactoe extends JDialog {
                 if (timeLeft > 0) {
                     timerLabel.setText("Thiiiiiink Faaaaaahst: " + timeLeft);
                 } else {
-                    timer.stop();
                     playRandomMove();
-                    checkGameOver();
-                    if (!gameOver) {
-                        currentPlayer = (currentPlayer.equals(player1)) ? player2 : player1;
-                        if (currentPlayer.equals(player1)) {
-                            textLabel.setText("Pacman\'s turn");
-                        }
-                        else {
-                            textLabel.setText("Ghost\'s turn");
-                        }
-                    }
                 }
             }
         });
@@ -103,30 +94,9 @@ public class ticpactoe extends JDialog {
                 
                 tileButton.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) { 
-                        JButton tileButton = (JButton) e.getSource();
-                        if (gameOver) {
-                            return;
-                        }
-                        if (tileButton.getText().equals("")) {
-                            tileButton.setText(currentPlayer);
-                            turns++;
-                            checkGameOver();
-
-                            if (currentPlayer.equals(player1)) {
-                                currentPlayer = player2;
-                                textLabel.setText(currentPlayer + "'s turn");
-                                playRandomMove(); 
-                            } else {
-                                currentPlayer = player1;
-                                textLabel.setText(currentPlayer + "'s turn");
-                                timeLeft = 2;
-                                timerLabel.setText("Thiiiiiink Faaaaaahst: " + timeLeft);
-                                timer.restart();
-                            }
-                        } 
-                        else {
-                            timer.stop();
-                        }
+                        JButton clicked = (JButton) e.getSource();
+                        if (gameOver || isProcessingMove || !clicked.getText().equals("")) return;
+                        executeMove(clicked);
                     }
                 });
             }
@@ -137,6 +107,34 @@ public class ticpactoe extends JDialog {
         this.setResizable(false);
         this.setLocationRelativeTo(owner);
         this.setVisible(true);
+    }
+
+
+    private void executeMove(JButton tile) {
+        isProcessingMove = true;
+        tile.setText(currentPlayer);
+        turns++;
+        checkGameOver();
+
+        if (!gameOver) {
+            if (currentPlayer.equals(player1)) {
+                currentPlayer = player2;
+                textLabel.setText("Ghost's turn");
+                
+                isProcessingMove = false; 
+                playRandomMove();
+            } else {
+                currentPlayer = player1;
+                textLabel.setText("Pacman's turn");
+                timeLeft = 2;
+                timerLabel.setText("Thiiiiiink Faaaaaahst: " + timeLeft);
+                timer.restart();
+                isProcessingMove = false;
+            }
+        } else {
+            timer.stop();
+            isProcessingMove = false;
+        }
     }
 
     public boolean isPacmanWon() {
@@ -160,12 +158,12 @@ public class ticpactoe extends JDialog {
             return;
         }
 
-        List<int[]> emptyTiles = new ArrayList<>();
+        List<JButton> emptyTiles = new ArrayList<>();
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (board[i][j].getText().equals("")) {
-                    emptyTiles.add(new int[]{i, j}); 
+                    emptyTiles.add(board[i][j]); 
                 }
             }
         }
@@ -175,13 +173,8 @@ public class ticpactoe extends JDialog {
         }
 
         Random random = new Random();
-        int randomIndex = random.nextInt(emptyTiles.size());
-        int[] chosenTile = emptyTiles.get(randomIndex);
-        
-        int row = chosenTile[0];
-        int col = chosenTile[1];
-
-        board[row][col].doClick();
+        JButton chosenTile = emptyTiles.get(random.nextInt(emptyTiles.size()));
+        executeMove(chosenTile);
     }
 
     void setWinnerTile(JButton tile) {
@@ -200,8 +193,6 @@ public class ticpactoe extends JDialog {
         tile.setForeground(new Color(0xFFFF0000));
         draw = true;
     }
-
-
 
     void checkGameOver() {
         // Horizontal check

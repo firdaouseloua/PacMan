@@ -310,5 +310,15 @@ public interface Board {
      */
     List<BoardEvent> getCurrentEvents();
 
+    /**
+     * Return a sound player to play sounds on the board
+     * @return a sound player
+     */
     SoundPlayer getSoundPlayer();
+
+
+    /**
+     * Set pacman position to a random tile not containing dot
+     */
+    void teleportPacManToRandomEmptyTile();
 }

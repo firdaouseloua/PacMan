@@ -110,7 +110,7 @@ public abstract class AbstractBoard implements Board {
         this.ghosts = new ArrayList<>();
         this.score = 0;
         this.boardState = BoardState.INITIAL;
-        this.level = 1;
+        this.level = 3;
         this.numberOfLives = 2;
         this.extralife = 0;
         this.random = new Random();
@@ -977,5 +977,30 @@ public abstract class AbstractBoard implements Board {
         return Collections.emptyList();
     }
 
+    public void teleportPacManToRandomEmptyTile() {
+        List<TilePosition> possibleTiles = new ArrayList<>();
+        Maze maze = getMaze();
+
+        for (int row = maze.getHeight()/4; row < maze.getHeight()/2; row++) {
+            for (int col = maze.getWidth()/4; col < maze.getWidth()/2; col++) {
+                Tile tile = maze.getTile(row, col);
+                
+                if (!tile.isWall() && !tile.hasDot()) {
+                    if (!new TilePosition(row, col).equals(penEntry())) {
+                        possibleTiles.add(new TilePosition(row, col));
+                    }
+                }
+            }
+        }
+
+        if (!possibleTiles.isEmpty()) {
+            TilePosition randomTile = possibleTiles.get(random.nextInt(possibleTiles.size()));
+            
+            int pixelX = randomTile.getCol() * Maze.TILE_WIDTH + Maze.TILE_WIDTH / 2;
+            int pixelY = randomTile.getLine() * Maze.TILE_WIDTH + Maze.TILE_WIDTH / 2;
+            
+            getPacMan().setPosition(pixelX, pixelY);
+        }
+    }
     
 }

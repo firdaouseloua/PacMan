@@ -128,14 +128,14 @@ public class VisualController extends SimpleController {
                         view.update();
                     } 
                     else if (duel.isShowdownDraw()) {
-                        if (getBoard().getLevel() < 3) { // HO MY LORD PRAY GACHA GOD FOR THIS
-                            getBoard().getPacMan().setPosition(0, 17);
+                        if (getBoard().getLevel() < 5) { // HO MY LORD PRAY GACHA GOD FOR THIS
                             getBoard().startActors();
+                            getBoard().teleportPacManToRandomEmptyTile();
                             getBoard().getSoundPlayer().play("resources/sounds/powerUp.wav");
                             view.setLayout(PacManLayout.GAME_ON);
                             view.update();
                         }
-                        else if (getBoard().getLevel() >= 3 && getBoard().getLevel() < 10) {
+                        else if (getBoard().getLevel() >= 5 && getBoard().getLevel() < 10) {
                             Random rand = new Random();
                             int x = rand.nextInt(2);
                             if (x == 0) {
