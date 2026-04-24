@@ -266,6 +266,7 @@ public abstract class AbstractBoard implements Board {
          */
         if (tile.hasBigDot()) {
             score += 50;
+            setExtraLifeScore(score);
             pacMan.setStopTime(3);
             /*
              * Big dot triggers frightened mode.
@@ -273,6 +274,7 @@ public abstract class AbstractBoard implements Board {
             activateFrightenedMode();
         } else {
             score += 10;
+            setExtraLifeScore(score);
             pacMan.setStopTime(1);
         }
 
@@ -447,6 +449,7 @@ public abstract class AbstractBoard implements Board {
                 * Classic Pac-Man frightened scores:
                 */
                 score += (int) (200 * Math.pow(2, Math.min(frightenedGhostsEaten - 1, 3)));
+                setExtraLifeScore(score);
 
                 continue;
             }
