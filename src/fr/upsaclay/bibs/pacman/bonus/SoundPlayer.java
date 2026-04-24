@@ -6,16 +6,14 @@ import java.io.File;
 public class SoundPlayer {
     private Thread musicThread;
     private volatile boolean stopMusic = false;
-    private volatile SourceDataLine musicLine; // Référence directe pour couper le son
+    private volatile SourceDataLine musicLine;
+    private volatile SourceDataLine sfxLine; 
 
     public void playLoop(String filePath) {
-        // 1. On demande l'arrêt
         stop(); 
+        try { Thread.sleep(50); } catch (InterruptedException e) {}
 
-        // 2. On attend un tout petit peu que l'ancien thread lâche la ligne audio
-        try { Thread.sleep(100); } catch (InterruptedException e) {}
-
-        stopMusic = false;
+        stopMusic = false; 
         musicThread = new Thread(() -> {
             try {
                 File file = new File(filePath);
@@ -27,48 +25,22 @@ public class SoundPlayer {
                         baseFormat.getSampleRate(), 16, 2, 4, baseFormat.getSampleRate(), false);
                     
                     AudioInputStream din = AudioSystem.getAudioInputStream(targetFormat, in);
-                    DataLine.Info info = new DataLine.Info(SourceDataLine.class, targetFormat);
-                    
-                    musicLine = (SourceDataLine) AudioSystem.getLine(info);
+                    musicLine = (SourceDataLine) AudioSystem.getLine(new DataLine.Info(SourceDataLine.class, targetFormat));
                     musicLine.open(targetFormat);
                     musicLine.start();
                     
                     byte[] buffer = new byte[4096];
                     int nRead;
-                    // On vérifie stopMusic à CHAQUE écriture de buffer
                     while ((nRead = din.read(buffer, 0, buffer.length)) != -1 && !stopMusic) {
                         musicLine.write(buffer, 0, nRead);
                     }
-                    
-                    // Nettoyage propre
-                    if (musicLine != null) {
-                        musicLine.drain();
-                        musicLine.stop();
-                        musicLine.close();
-                    }
+                    if (musicLine != null) { musicLine.stop(); musicLine.close(); }
                     din.close();
-                    if (stopMusic) break; 
                 }
-            } catch (Exception e) {
-                // Erreur silencieuse lors de l'arrêt
-            }
+            } catch (Exception e) {}
         });
         musicThread.setDaemon(true);
         musicThread.start();
-    }
-
-    public void stop() {
-        stopMusic = true;
-        // ACTION CRITIQUE : On coupe la ligne matériellement
-        if (musicLine != null) {
-            try {
-                musicLine.stop();
-                musicLine.flush(); // Vide le buffer immédiatement
-            } catch (Exception e) {}
-        }
-        if (musicThread != null) {
-            musicThread.interrupt();
-        }
     }
 
     public void play(String filePath) {
@@ -76,17 +48,43 @@ public class SoundPlayer {
             try {
                 File file = new File(filePath);
                 AudioInputStream in = AudioSystem.getAudioInputStream(file);
-                AudioFormat targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 
-                    in.getFormat().getSampleRate(), 16, 2, 4, in.getFormat().getSampleRate(), false);
+                AudioFormat targetFormat = new AudioFormat(
+                    AudioFormat.Encoding.PCM_SIGNED, in.getFormat().getSampleRate(), 16, 2, 4, in.getFormat().getSampleRate(), false);
                 AudioInputStream din = AudioSystem.getAudioInputStream(targetFormat, in);
+                
                 SourceDataLine line = (SourceDataLine) AudioSystem.getLine(new DataLine.Info(SourceDataLine.class, targetFormat));
+                sfxLine = line;
+                
                 line.open(targetFormat);
                 line.start();
+                
                 byte[] buffer = new byte[4096];
                 int n;
-                while ((n = din.read(buffer, 0, buffer.length)) != -1) line.write(buffer, 0, n);
-                line.drain(); line.close();
-            } catch (Exception e) {}
+                while ((n = din.read(buffer, 0, buffer.length)) != -1) {
+                    line.write(buffer, 0, n);
+                }
+                line.drain(); 
+                line.close();
+            } catch (Exception e) {
+            }
         }).start();
+    }
+
+    public void stop() {
+        stopMusic = true; 
+        
+        // Stop background line
+        if (musicLine != null) {
+            try { musicLine.stop(); musicLine.flush(); musicLine.close(); } catch (Exception e) {}
+            musicLine = null;
+        }
+        
+        // Stop SFX line
+        if (sfxLine != null) {
+            try { sfxLine.stop(); sfxLine.flush(); sfxLine.close(); } catch (Exception e) {}
+            sfxLine = null;
+        }
+
+        if (musicThread != null) musicThread.interrupt();
     }
 }

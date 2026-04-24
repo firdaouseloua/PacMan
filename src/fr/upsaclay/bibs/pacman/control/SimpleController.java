@@ -115,8 +115,6 @@ public class SimpleController implements Controller {
         if (state == BoardState.GAME_OVER) {
             if (action == GameAction.NEW_GAME) {
                 initialize();
-                board.getSoundPlayer().stop();
-                board.getSoundPlayer().playLoop("resources/sounds/start_screen.wav");
                 return;
             }
             throw new ForbiddenActionException(action);
@@ -129,6 +127,7 @@ public class SimpleController implements Controller {
         if (state == BoardState.LEVEL_OVER) {
             if (action == GameAction.NEXT_LEVEL) {
                 board.initializeNewLevel(board.getLevel()+1);
+                board.startActors();
                 board.getSoundPlayer().stop();
                 board.getSoundPlayer().playLoop("resources/sounds/game_main.wav");
                 gameStarted = true;

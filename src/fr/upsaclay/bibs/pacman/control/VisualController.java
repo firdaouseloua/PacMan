@@ -86,7 +86,7 @@ public class VisualController extends SimpleController {
                  * We reconnect the board to the view and return to INIT.
                  */
                 view.setBoard(getBoard());
-                view.setLayout(PacManLayout.INIT);
+                view.setLayout(PacManLayout.GAME_ON);
                 view.update();
                 break;
             default:

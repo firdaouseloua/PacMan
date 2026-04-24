@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyAdapter;
@@ -44,7 +45,7 @@ import fr.upsaclay.bibs.pacman.model.maze.Tile;
 
 
 public class BasicPacManView extends JFrame implements PacManView {
-
+    private boolean endSfxPlayed = false; // a lock for sound looping purpose yes sound only... my thirteen reason why <-----
     private static final int TIMER_DELAY_MS = 17;
     private static final int SCALE = 3; 
     private final GamePanel gamePanel;
@@ -134,6 +135,7 @@ public class BasicPacManView extends JFrame implements PacManView {
                 break;
             case KeyEvent.VK_ENTER:
                 action = GameAction.START;
+                this.endSfxPlayed = false;
                 break;
             case KeyEvent.VK_P:
                 action = GameAction.PAUSE;
@@ -143,9 +145,13 @@ public class BasicPacManView extends JFrame implements PacManView {
                 break;
             case KeyEvent.VK_N:
                 action = GameAction.NEW_GAME;
+                this.endSfxPlayed = false;
                 break;
             case KeyEvent.VK_L:
-                action = GameAction.NEXT_LEVEL;
+                if (board != null && board.getBoardState() == BoardState.LEVEL_OVER) {
+                    action = GameAction.NEXT_LEVEL;
+                    this.endSfxPlayed = false; 
+                }
                 break;
         }
 
@@ -220,9 +226,6 @@ public class BasicPacManView extends JFrame implements PacManView {
             if (state == BoardState.LIFE_OVER) {
                 return "Press N to continue";
             }
-            if (state == BoardState.LEVEL_OVER) {
-                return "Press L for next level";
-            }
             if (state == BoardState.GAME_OVER) {
                 return "Game over";
             }
@@ -245,33 +248,30 @@ public class BasicPacManView extends JFrame implements PacManView {
         try {
             controller.receiveAction(GameAction.NEXT_FRAME);
 
-            if (board != null) {
-                BoardState currentState = board.getBoardState();
-                if (currentState == BoardState.GAME_OVER) {
-                timer.stop();
-                board.getSoundPlayer().stop(); 
-                board.getSoundPlayer().play("resources/sounds/get_a_life.wav"); 
-                gamePanel.repaint(); 
+        if (board != null) {
+                    BoardState currentState = board.getBoardState();
+                    if (!endSfxPlayed && (currentState == BoardState.GAME_OVER || 
+                                            currentState == BoardState.LEVEL_OVER || 
+                                            currentState == BoardState.LIFE_OVER)) {
+                                                endSfxPlayed = true; 
+                                                timer.stop();
+                                                board.getSoundPlayer().stop();
+
+                                                if (currentState == BoardState.GAME_OVER) {
+                                                    board.getSoundPlayer().play("resources/sounds/get_a_life.wav");
+                                                } else if (currentState == BoardState.LEVEL_OVER) {
+                                                    board.getSoundPlayer().play("resources/sounds/thank_you_next.wav");
+                                                } else {
+                                                    board.getSoundPlayer().play("resources/sounds/explosion.wav");
+                                                }
+                                                
+                                                gamePanel.repaint(); 
+                                            }
                 }
-                else if (currentState == BoardState.LEVEL_OVER) {
-                    timer.stop();
-                    board.getSoundPlayer().stop(); 
-                    board.getSoundPlayer().play("resources/sounds/thank_you_next.wav"); 
-                    gamePanel.repaint(); 
-                }
-                
-                // Check for Life Lost (but not game over)
-                else if (currentState == BoardState.LIFE_OVER) {
-                    timer.stop();
-                    board.getSoundPlayer().stop();
-                    board.getSoundPlayer().play("resources/sounds/explosion.wav");
-                    gamePanel.repaint();
-                }
+            } catch (PacManException e) {
+                throw new PacManException(e);
             }
-        } catch (PacManException e) {
-            throw new PacManException(e);
         }
-    }
 
 // HELL is here ...
 private class GamePanel extends JPanel {
@@ -541,20 +541,41 @@ private class GamePanel extends JPanel {
         drawStatusText(g2d);
     }
     
-    private void drawStatusText(Graphics g) {
+    private void drawStatusText(Graphics2D g) {
+        int width = getWidth() / SCALE;
+        int height = getHeight() / SCALE;
         String status = getStatusText();
         if (status == null || status.isEmpty()) {
             return;
         }
         g.setColor(Color.YELLOW);
-        g.setFont(new Font("Century Schoolbook", Font.BOLD, 4));
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
         FontMetrics fm = g.getFontMetrics();
-        int x = getWidth() / SCALE - fm.stringWidth(status) - 10;
-        int y = 20;
+        int x = width - fm.stringWidth(status) - 5;
+        int y = 15;
         g.drawString(status, x, y);
+
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
+        String scoreText = "Current Score: " + (board != null ? board.getScore() : 0);
+        int scoreX = 7;
+        int scoreY = 15;
+        g.drawString(scoreText, scoreX, scoreY);
+
+
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 8));
+        String level = "Level " + (board != null ? board.getLevel() : 0);
+        FontMetrics fm_level = g.getFontMetrics();
+        int levelX = (width - fm_level.stringWidth(level))/2;
+        int levelY = 15;
+
+        GradientPaint levelGradient = new GradientPaint(
+        levelX + fm_level.stringWidth(level), levelY - fm_level.getAscent() , new Color(0x2121FF), 
+        levelX, levelY, new Color(0xFFFF00));
+        g.setPaint(levelGradient);
+        g.drawString(level, levelX, levelY);
     }
 
-    private void drawStartPage(Graphics g) {
+    private void drawStartPage(Graphics2D g) {
         int width = getWidth() / SCALE;
         int height = getHeight() / SCALE;
         g.setColor(Color.BLACK);
@@ -612,7 +633,6 @@ private class GamePanel extends JPanel {
         int titleY = height / 3;
         g.drawString(title, titleX, titleY);
         
-        // Draw the final score underneath
         g.setColor(Color.WHITE);
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 12));
         String scoreText = "Final Score: " + (board != null ? board.getScore() : 0);
@@ -631,11 +651,25 @@ private class GamePanel extends JPanel {
         
         g.setColor(Color.RED);
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 16));
-        String title = "You Win!";
+        String title = "You WON!... Maybe?";
         FontMetrics fm = g.getFontMetrics();
         int titleX = (width - fm.stringWidth(title)) / 2;
-        int titleY = height / 3;
+        int titleY = height / 3 + 10;
         g.drawString(title, titleX, titleY);
+
+        String level_message = "Press L To Continue";
+        g.setFont(new Font("Century Schoolbook", Font.BOLD | Font.ITALIC, 14));
+        FontMetrics fm_level = g.getFontMetrics();
+        int levelX = (width - fm_level.stringWidth(level_message)) / 2;
+        int levelY = height / 2 + 40;
+
+        GradientPaint levelGradient = new GradientPaint(
+            levelX, levelY - fm_level.getAscent(), new Color(0xFFFF00), 
+            levelX, levelY,                        new Color(0x2121FF)  
+        );
+
+        g.setPaint(levelGradient);
+        g.drawString(level_message, levelX, levelY);
         
         g.setColor(Color.WHITE);
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 12));
