@@ -174,6 +174,9 @@ public abstract class AbstractBoard implements Board {
         ghostStateFrameCount = 0;
         frightenedFramesRemaining = 0;
         frightenedGhostsEaten = 0;
+        if (soundPlayer != null) {
+            soundPlayer.playLoop("resources/sounds/game_main.wav");
+        }
 
         boardState = BoardState.STARTED;
     }
@@ -365,8 +368,7 @@ public abstract class AbstractBoard implements Board {
         int duration = getFrightenedDurationFrames();
         frightenedGhostsEaten = 0;
         if (soundPlayer != null) {
-            soundPlayer.stop(); 
-            soundPlayer.play("resources/sounds/capybara.wav");
+            soundPlayer.playLoop("resources/sounds/capybara.wav");
         }
         if (duration <= 0) {
             frightenedFramesRemaining = 0;
@@ -427,8 +429,7 @@ public abstract class AbstractBoard implements Board {
             */
             if (frightenedFramesRemaining == 0) {
                 if (soundPlayer != null) {
-                    soundPlayer.stop(); 
-                    soundPlayer.play("resources/sounds/game_main.wav"); 
+                    soundPlayer.playLoop("resources/sounds/game_main.wav");
                 }
                 for (Ghost ghost : ghosts) {
                     if (ghost.getGhostState() != GhostState.DEAD) {
@@ -509,9 +510,7 @@ public abstract class AbstractBoard implements Board {
                 ghost.setGhostState(GhostState.DEAD);
                 frightenedGhostsEaten++;
 
-                soundPlayer.stop();
                 soundPlayer.play("resources/sounds/fah.wav");
-                soundPlayer.playLoop("resources/sounds/capybara.wav");
                 /*
                 * Classic Pac-Man frightened scores:
                 */
