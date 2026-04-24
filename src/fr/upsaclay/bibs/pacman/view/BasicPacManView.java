@@ -191,6 +191,7 @@ public class BasicPacManView extends JFrame implements PacManView {
     @Override
     public void setLayout(PacManLayout layout) {
         setLayoutState(layout);
+        
     }
 
     @Override

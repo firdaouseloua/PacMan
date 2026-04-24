@@ -1,5 +1,7 @@
 package fr.upsaclay.bibs.pacman.control;
 
+import java.util.Random;
+
 import javax.swing.JFrame;
 import fr.upsaclay.bibs.pacman.bonus.ticpactoe;
 import fr.upsaclay.bibs.pacman.PacManException;
@@ -114,15 +116,33 @@ public class VisualController extends SimpleController {
                     break;
 
                 case GAME_OVER:
+                    view.setLayout(PacManLayout.PAUSE);
                     getBoard().getSoundPlayer().stop();
-                    ticpactoe duel = new ticpactoe(view instanceof JFrame ? (JFrame)view : null);
-                    duel.setVisible(true);
+                    ticpactoe duel = new ticpactoe(view instanceof JFrame ? (JFrame)view : null, getBoard().getMaze().getPixelWidth() * 3, getBoard().getMaze().getPixelHeight() * 3);
                     if (duel.isPacmanWon()) {
                         getBoard().setNumberOfLives(1); // PACMAN WON ?? LET HIM COOK 1 MORE TIME
                         try {
                             this.receiveAction(GameAction.NEW_GAME); 
                         } catch (PacManException e) {}
                     } 
+                    else if (duel.isShowdownDraw()) {
+                        if (getBoard().getLevel() < 3) { // HO MY LORD PRAY GACHA GOD FOR THIS
+                            getBoard().getPacMan().setPosition(0, 17);
+                            this.receiveAction(GameAction.NEW_GAME);
+                        }
+                        else if (getBoard().getLevel() >= 3 && getBoard().getLevel() < 10) {
+                            Random rand = new Random();
+                            int x = rand.nextInt(2);
+                            if (x == 0) {
+                                getBoard().setNumberOfLives(1);
+                                this.receiveAction(GameAction.NEW_GAME);
+                            }
+                            else {
+                                view.setLayout(PacManLayout.GAME_OVER);
+                                view.update();
+                            }
+                        }
+                    }
                     else {
                         view.setLayout(PacManLayout.GAME_OVER);
                         view.update();

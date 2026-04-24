@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.Random;
 
 public class ticpactoe extends JDialog {
-    int boardwidth = 600;
-    int boardheight = 650;
     JLabel timerLabel = new JLabel();
     JLabel textLabel = new JLabel();
     JPanel textPanel = new JPanel();
@@ -36,16 +34,10 @@ public class ticpactoe extends JDialog {
     Timer timer;
     int timeLeft = 3;
 
-    public ticpactoe(Frame owner){
-        super(owner, "Tic-Pac-Toe Showdown", true)
-
-        this.setSize(boardwidth, boardheight);
-        this.setDefaultCloseOperation(Jdialog.DISPOE_ON_CLOSE);
-        this.setVisible(true);
-        this.setLocationRelativeTo(null);
-        this.setResizable(false);
+    public ticpactoe(Frame owner, int width, int height) {
+        super(owner, "Tic-Pac-Toe Showdown", true);
+        this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         this.setLayout(new BorderLayout());
-
         textLabel.setBackground(new Color(0xFF2121FF));
         textLabel.setForeground(Color.YELLOW);
         textLabel.setFont(new Font("Century Schoolbook", Font.BOLD | Font.ITALIC, 40));
@@ -54,7 +46,7 @@ public class ticpactoe extends JDialog {
         textLabel.setOpaque(true);
 
         timerLabel.setBackground(new Color(0xFF2121FF));
-        timerLabel.setForeground(Color.WHITE);
+        timerLabel.setForeground(Color.BLACK);
         timerLabel.setFont(new Font("Century Schoolbook", Font.BOLD, 20));
         timerLabel.setHorizontalAlignment(JLabel.CENTER);
         timerLabel.setText("Time left: " + timeLeft);
@@ -87,13 +79,17 @@ public class ticpactoe extends JDialog {
                     checkGameOver();
                     if (!gameOver) {
                         currentPlayer = (currentPlayer.equals(player1)) ? player2 : player1;
-                        textLabel.setText(currentPlayer + "'s turn");
+                        if (currentPlayer.equals(player1)) {
+                            textLabel.setText("Pacman\'s turn");
+                        }
+                        else {
+                            textLabel.setText("Ghost\'s turn");
+                        }
                     }
                 }
             }
         });
         timer.start();
-
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 JButton tileButton = new JButton();
@@ -116,21 +112,31 @@ public class ticpactoe extends JDialog {
                             turns++;
                             checkGameOver();
 
-                            if (!gameOver) {
-                                currentPlayer = (currentPlayer.equals(player1)) ? player2 : player1;
+                            if (currentPlayer.equals(player1)) {
+                                currentPlayer = player2;
                                 textLabel.setText(currentPlayer + "'s turn");
-
+                                playRandomMove(); 
+                            } else {
+                                currentPlayer = player1;
+                                textLabel.setText(currentPlayer + "'s turn");
                                 timeLeft = 3;
                                 timerLabel.setText("Thiiiiiink Faaaaaahst: " + timeLeft);
                                 timer.restart();
-                           } else {
-                                timer.stop();
                             }
+                        } 
+                        else {
+                            timer.stop();
                         }
                     }
                 });
             }
         }
+        this.add(textPanel, BorderLayout.NORTH);
+        this.add(BoardPanel, BorderLayout.CENTER);  
+        this.setSize(width, height);
+        this.setResizable(false);
+        this.setLocationRelativeTo(owner);
+        this.setVisible(true);
     }
 
     public boolean isPacmanWon() {
