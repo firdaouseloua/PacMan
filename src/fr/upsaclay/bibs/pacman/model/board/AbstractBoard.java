@@ -119,8 +119,8 @@ public abstract class AbstractBoard implements Board {
         this.ghosts = new ArrayList<>();
         this.score = 0;
         this.boardState = BoardState.INITIAL;
-        this.level = 3;
-        this.numberOfLives = 2;
+        this.level = 1;
+        this.numberOfLives = 3;
         this.extraLifeScore = 10000;
         this.extraLifeGiven = false;
         this.currentBonus = null;

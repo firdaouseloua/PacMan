@@ -749,7 +749,7 @@ private class GamePanel extends JPanel {
 
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
 
-        // Status en haut à droite
+        // Status right
         String status = getStatusText();
         if (status != null && !status.isEmpty()) {
             g.setColor(Color.YELLOW);
@@ -761,17 +761,17 @@ private class GamePanel extends JPanel {
             g.drawString(status, statusX, statusY);
         }
 
-        // Lives en haut à gauche
+        // Lives 
         drawLives(g, 7, 10);
 
-        // Score à gauche sous les vies
+        // Score left
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
         g.setColor(Color.WHITE);
 
         String scoreText = "Score : " + (board != null ? board.getScore() : 0);
         g.drawString(scoreText, 7, 20);
 
-        // High Score à droite sous le status
+        // High Score top right
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
         g.setColor(Color.YELLOW);
 
@@ -783,7 +783,7 @@ private class GamePanel extends JPanel {
 
         g.drawString(highScoreText, highScoreX, highScoreY);
 
-        // Level au centre
+        // Level centered
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 8));
         String level = "Level " + (board != null ? board.getLevel() : 0);
         FontMetrics fmLevel = g.getFontMetrics();
