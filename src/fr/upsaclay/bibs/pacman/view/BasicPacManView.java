@@ -45,6 +45,9 @@ import fr.upsaclay.bibs.pacman.model.maze.Tile;
 import fr.upsaclay.bibs.pacman.model.actors.Bonus;
 import fr.upsaclay.bibs.pacman.model.actors.BonusType;
 
+import java.awt.GridLayout;
+import javax.swing.BoxLayout;
+
 
 public class BasicPacManView extends JFrame implements PacManView {
     private boolean endSfxPlayed = false; // a lock for sound looping purpose yes sound only... my thirteen reason why <-----
@@ -56,6 +59,10 @@ public class BasicPacManView extends JFrame implements PacManView {
     private Board board;
     private Controller controller;
     private PacManLayout viewLayout;
+
+    private JPanel gameOverButtonPanel;
+    private JButton replayButton;
+    private JButton quitButton;
 
     public BasicPacManView() throws PacManException {
         super("PacMan");
@@ -76,7 +83,8 @@ public class BasicPacManView extends JFrame implements PacManView {
         
         JPanel titleBar = createTitleBar();
         add(titleBar, BorderLayout.NORTH);
-        add(gamePanel, BorderLayout.CENTER);        
+        add(gamePanel, BorderLayout.CENTER);      
+        createGameOverButtons();  
         setFocusable(true);
 
         addKeyListener(new KeyAdapter() {
@@ -91,6 +99,59 @@ public class BasicPacManView extends JFrame implements PacManView {
             }
         });
         pack();
+    }
+
+    private void createGameOverButtons() {
+        gameOverButtonPanel = new JPanel();
+        gameOverButtonPanel.setBackground(Color.BLACK);
+        gameOverButtonPanel.setLayout(new GridLayout(1, 2, 20, 0));
+        gameOverButtonPanel.setBorder(BorderFactory.createEmptyBorder(10, 60, 15, 60));
+
+        replayButton = createArcadeButton("PLAY AGAIN");
+        quitButton = createArcadeButton("QUIT");
+
+        replayButton.addActionListener(e -> {
+            try {
+                controller.receiveAction(GameAction.NEW_GAME);
+            } catch (PacManException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        quitButton.addActionListener(e -> System.exit(0));
+
+        gameOverButtonPanel.add(replayButton);
+        gameOverButtonPanel.add(quitButton);
+
+        gameOverButtonPanel.setVisible(false);
+        add(gameOverButtonPanel, BorderLayout.SOUTH);
+    }
+
+    private JButton createArcadeButton(String text) {
+        JButton button = new JButton(text);
+
+        button.setFont(new Font("Century Schoolbook", Font.BOLD, 16));
+        button.setForeground(Color.YELLOW);
+        button.setBackground(Color.BLACK);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createLineBorder(new Color(0x2121FF), 3));
+        button.setPreferredSize(new Dimension(180, 45));
+
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                button.setForeground(Color.BLACK);
+                button.setBackground(Color.YELLOW);
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                button.setForeground(Color.YELLOW);
+                button.setBackground(Color.BLACK);
+            }
+        });
+
+        return button;
     }
 
     private JPanel createTitleBar() {
@@ -216,6 +277,9 @@ public class BasicPacManView extends JFrame implements PacManView {
             }
         } else {
             timer.stop();
+        }
+        if (gameOverButtonPanel != null) {
+            gameOverButtonPanel.setVisible(layout == PacManLayout.GAME_OVER);
         }
 
         gamePanel.repaint();
