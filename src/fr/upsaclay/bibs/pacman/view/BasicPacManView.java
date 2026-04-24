@@ -233,6 +233,7 @@ public class BasicPacManView extends JFrame implements PacManView {
         if (board != null) {
             gamePanel.updatePreferredSize();
             gamePanel.initGridTextures();
+            gamePanel.initBonusTextures();
             pack();
             setLocationRelativeTo(null);
         }
@@ -347,6 +348,7 @@ private class GamePanel extends JPanel {
         
     private final Map<Tile, BufferedImage> tileTextures = new EnumMap<>(Tile.class);
     private final Map<String, BufferedImage> actorTextures = new HashMap<>();
+    private final Map<String, BufferedImage> fruitsTexture = new HashMap<>();
     private BufferedImage[][] gridTextures; 
 
     public GamePanel() {
@@ -474,6 +476,34 @@ private class GamePanel extends JPanel {
         return img;
     }
 
+    public void initBonusTextures(){
+        Map<String, List<Integer>> fruits = new HashMap<>();
+        fruits.put("APPLE", List.of(0x00000000, 0xFFFF0000, 0xFF00FF00, 0x00000000));
+        fruits.put("BELL", List.of(0x00000000, 0xFFFFD700, 0xFFFFFFFF, 0xFF00FFFF, 0xFFFF0000));
+        fruits.put("CHERRY", List.of(0x00000000, 0xFF00FF00, 0xFFFF0000, 0xFFFFFFFF, 0xFF8B0000));
+        fruits.put("GALAXIAN", List.of(0x00000000, 0xFFFFFF00, 0xFF2121FF, 0xFFFF0000));
+        fruits.put("GRAPES", List.of(0x00000000, 0xFF00FF00, 0xFF008000, 0xFFCCFF00));
+        fruits.put("KEY", List.of(0x00000000, 0xFF00FFFF, 0xFFFFFFFF, 0xFF2121FF));
+        fruits.put("PEACH", List.of(0x00000000, 0xFF00FF00, 0xFF008000, 0xFFFFB851));
+        fruits.put("STRAWBERRY", List.of(0x00000000, 0xFFFFFFFF, 0xFF00FF00, 0xFFFF0000));
+        for (Map.Entry<String, List<Integer>> entry : fruits.entrySet()) {
+            String fruitsName = entry.getKey();
+            List<Integer> palette = entry.getValue();
+            String path = "resources/bonus/" + fruitsName + ".txt";
+            File file = new File(path);
+            if (file.exists()) {
+                try (InputStream input = new FileInputStream(file)) {
+                    BufferedImage img = parseTexture(input, palette, 16);
+                    fruitsTexture.put(fruitsName, img);
+                } catch (IOException e) {
+                    System.err.println("Error loading " + fruitsName + ": " + e.getMessage());
+                }
+            } else {
+                System.err.println("File not found : " + file.getAbsolutePath());
+            }
+        }
+    }
+
     public void initGridTextures() {
         if (board == null || board.getMaze() == null) return;
         
@@ -591,67 +621,21 @@ private class GamePanel extends JPanel {
         Bonus bonus = board.getCurrentBonus();
 
         if (bonus != null && bonus.isActive()) {
-            int bx = bonus.getX();
-            int by = bonus.getY();
+            String fruitName = bonus.getBonusType().toString().toUpperCase();
+            
+            BufferedImage img = fruitsTexture.get(fruitName);
 
-            switch (bonus.getBonusType()) {
-                case CHERRY:
-                    g2d.setColor(Color.RED);
-                    g2d.fillOval(bx - 5, by - 4, 6, 6);
-                    g2d.fillOval(bx, by - 4, 6, 6);
-                    g2d.setColor(Color.GREEN);
-                    g2d.drawLine(bx, by - 4, bx + 3, by - 9);
-                    break;
-
-                case STRAWBERRY:
-                    g2d.setColor(Color.RED);
-                    g2d.fillOval(bx - 5, by - 5, 10, 10);
-                    g2d.setColor(Color.GREEN);
-                    g2d.fillRect(bx - 2, by - 8, 4, 3);
-                    break;
-
-                case PEACH:
-                    g2d.setColor(new Color(0xFFFFB070));
-                    g2d.fillOval(bx - 6, by - 6, 12, 12);
-                    break;
-
-                case APPLE:
-                    g2d.setColor(Color.RED);
-                    g2d.fillOval(bx - 6, by - 6, 12, 12);
-                    g2d.setColor(Color.GREEN);
-                    g2d.fillRect(bx - 1, by - 9, 3, 4);
-                    break;
-
-                case GRAPES:
-                    g2d.setColor(new Color(0xAA55FF));
-                    g2d.fillOval(bx - 5, by - 5, 5, 5);
-                    g2d.fillOval(bx, by - 5, 5, 5);
-                    g2d.fillOval(bx - 2, by, 5, 5);
-                    break;
-
-                case GALAXIAN:
-                    g2d.setColor(Color.YELLOW);
-                    g2d.fillPolygon(
-                        new int[]{bx, bx - 7, bx + 7},
-                        new int[]{by - 7, by + 6, by + 6},
-                        3
-                    );
-                    break;
-
-                case BELL:
-                    g2d.setColor(Color.YELLOW);
-                    g2d.fillArc(bx - 6, by - 6, 12, 12, 0, 180);
-                    g2d.fillRect(bx - 6, by, 12, 5);
-                    break;
-
-                case KEY:
-                    g2d.setColor(Color.YELLOW);
-                    g2d.fillOval(bx - 7, by - 3, 6, 6);
-                    g2d.fillRect(bx - 1, by - 1, 10, 2);
-                    g2d.fillRect(bx + 5, by - 1, 2, 5);
-                    break;
+            if (img != null) {
+                int drawX = bonus.getX() - (img.getWidth() / 2);
+                int drawY = bonus.getY() - (img.getHeight() / 2);
+                g2d.drawImage(img, drawX, drawY, null);
+            } 
+            else {
+                throw new RuntimeException(" Fruits texture not rendable !!! :" + fruitName );
             }
         }
+
+            
 
         for (Ghost ghost : board.getGhosts()) {
             if (ghost != null) {

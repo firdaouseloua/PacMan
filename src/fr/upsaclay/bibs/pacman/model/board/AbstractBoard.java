@@ -1127,29 +1127,31 @@ public abstract class AbstractBoard implements Board {
     }
 
     public void teleportPacManToRandomEmptyTile() {
-        List<TilePosition> possibleTiles = new ArrayList<>();
+        List<TilePosition> emptyTile = new ArrayList<>();
         Maze maze = getMaze();
 
-        for (int row = maze.getHeight()/4; row < maze.getHeight()/2; row++) {
-            for (int col = maze.getWidth()/4; col < maze.getWidth()/2; col++) {
-                Tile tile = maze.getTile(row, col);
-                
-                if (!tile.isWall() && !tile.hasDot()) {
-                    if (!new TilePosition(row, col).equals(penEntry())) {
-                        possibleTiles.add(new TilePosition(row, col));
-                    }
+        for (int row = 0; row < maze.getHeight(); row++) {
+            for (int col = 0; col < maze.getWidth(); col++) {
+                if (maze.getTile(row, col) == Tile.EE) {
+                    boolean isInsidePen = (row >= 13 && row <= 16 && col >= 9 && col <= 16);
+                    boolean isOuterVoid = (row <= 2 || row >= 34);
+                    boolean isSideTunnelVoid = (col <= 5 || col >= 22) && (row >= 12 && row <= 22);
+                    if (!isInsidePen && !isOuterVoid && !isSideTunnelVoid) {
+                    emptyTile.add(new TilePosition(row, col));
+                }
                 }
             }
         }
 
-        if (!possibleTiles.isEmpty()) {
-            TilePosition randomTile = possibleTiles.get(random.nextInt(possibleTiles.size()));
+        if (!emptyTile.isEmpty()) {
+            TilePosition target = emptyTile.get(random.nextInt(emptyTile.size()));
             
-            int pixelX = randomTile.getCol() * Maze.TILE_WIDTH + Maze.TILE_WIDTH / 2;
-            int pixelY = randomTile.getLine() * Maze.TILE_WIDTH + Maze.TILE_WIDTH / 2;
+            int pixelX = target.getCol() * Maze.TILE_WIDTH + Maze.TILE_WIDTH / 2;
+            int pixelY = target.getLine() * Maze.TILE_WIDTH + Maze.TILE_WIDTH / 2;
             
             getPacMan().setPosition(pixelX, pixelY);
+        } else {
+            getPacMan().setPosition(112, 211);
         }
     }
-    
 }
