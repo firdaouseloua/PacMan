@@ -618,10 +618,25 @@ private class GamePanel extends JPanel {
             }
         }
 
+        if (isPowerModeActive()) {
+            drawPowerModeOverlay(g2d);
+        }
+
         Actor pacman = board.getPacMan();
 
         if (pacman != null) {
+            if (isPowerModeActive()) {
+                boolean pulse = (System.currentTimeMillis() / 200) % 2 == 0;
+
+                g2d.setColor(pulse ? new Color(0, 255, 255, 90) : new Color(0, 120, 255, 60));
+                g2d.fillOval(pacman.getX() - 12, pacman.getY() - 12, 24, 24);
+
+                g2d.setColor(Color.CYAN);
+                g2d.drawOval(pacman.getX() - 13, pacman.getY() - 13, 26, 26);
+            }
+
             String dir = pacman.getDirection().toString().toUpperCase(); 
+            
             BufferedImage img = actorTextures.get("PACMAN_" + dir);
             if (img == null) img = actorTextures.get("PACMAN_RIGHT"); 
             
@@ -742,6 +757,38 @@ private class GamePanel extends JPanel {
                 iterator.remove();
             }
         }
+    }
+
+    private boolean isPowerModeActive() {
+        if (board == null) return false;
+
+        for (Ghost ghost : board.getGhosts()) {
+            if (ghost.getGhostState() == GhostState.FRIGHTENED
+                    || ghost.getGhostState() == GhostState.FRIGHTENED_END) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void drawPowerModeOverlay(Graphics2D g) {
+        int width = getWidth() / SCALE;
+        int height = getHeight() / SCALE;
+
+        g.setColor(new Color(0, 0, 80, 45));
+        g.fillRect(0, 0, width, height);
+
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 7));
+        g.setColor(Color.CYAN);
+
+        String text = "POWER MODE!";
+        FontMetrics fm = g.getFontMetrics();
+
+        int x = (width - fm.stringWidth(text)) / 2;
+        int y = 25;
+
+        g.drawString(text, x, y);
     }
     
     private void drawStatusText(Graphics2D g) {
