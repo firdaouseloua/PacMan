@@ -117,7 +117,13 @@ public class BasicPacManView extends JFrame implements PacManView {
 
         replayButton.addActionListener(e -> {
             try {
+                if (board != null && board.getSoundPlayer() != null) {
+                    board.getSoundPlayer().stopAll(); // stop get_a_life + musiques
+                }
+
+                this.endSfxPlayed = false;
                 controller.receiveAction(GameAction.NEW_GAME);
+
             } catch (PacManException ex) {
                 ex.printStackTrace();
             }
@@ -238,7 +244,6 @@ public class BasicPacManView extends JFrame implements PacManView {
         if (board != null) {
             gamePanel.updatePreferredSize();
             gamePanel.initGridTextures();
-            gamePanel.initBonusTextures();
             pack();
             setLocationRelativeTo(null);
         }
@@ -379,6 +384,7 @@ private class GamePanel extends JPanel {
         setFocusable(true);
         loadTileTextures();
         loadActorTextures();
+        initBonusTextures();
     }
 
     private void loadActorTextures() {
@@ -582,6 +588,7 @@ private class GamePanel extends JPanel {
 
         Maze maze = board.getMaze();
         int tileSize = Maze.TILE_WIDTH;
+        boolean powerMode = isPowerModeActive();
 
         if (gridTextures != null) {                    
             for (int line = 0; line < gridTextures.length; line++) {
@@ -618,14 +625,14 @@ private class GamePanel extends JPanel {
             }
         }
 
-        if (isPowerModeActive()) {
+        if (powerMode) {
             drawPowerModeOverlay(g2d);
         }
 
         Actor pacman = board.getPacMan();
 
         if (pacman != null) {
-            if (isPowerModeActive()) {
+            if (powerMode) {
                 boolean pulse = (System.currentTimeMillis() / 200) % 2 == 0;
 
                 g2d.setColor(pulse ? new Color(0, 255, 255, 90) : new Color(0, 120, 255, 60));
@@ -666,9 +673,10 @@ private class GamePanel extends JPanel {
                 int drawX = bonus.getX() - (img.getWidth() / 2);
                 int drawY = bonus.getY() - (img.getHeight() / 2);
                 g2d.drawImage(img, drawX, drawY, null);
-            } 
+            }
             else {
-                throw new RuntimeException(" Fruits texture not rendable !!! :" + fruitName );
+                g2d.setColor(Color.RED);
+                g2d.fillOval(bonus.getX() - 5, bonus.getY() - 5, 10, 10);
             }
         }
 
@@ -712,6 +720,9 @@ private class GamePanel extends JPanel {
     }
 
     private void updateFloatingTextsFromEvents() {
+        if (floatingTexts.size() > 30) {
+            floatingTexts.clear();
+        }
         if (board == null) return;
 
         for (BoardEvent event : board.getCurrentEvents()) {

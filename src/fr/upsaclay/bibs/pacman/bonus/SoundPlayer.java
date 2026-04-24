@@ -11,29 +11,45 @@ public class SoundPlayer {
 
     public void playLoop(String filePath) {
         stop(); 
-        try { Thread.sleep(50); } catch (InterruptedException e) {}
+        try { 
+            Thread.sleep(50); 
+        } catch (InterruptedException e) {}
 
         stopMusic = false; 
         musicThread = new Thread(() -> {
             try {
                 File file = new File(filePath);
+
                 while (!stopMusic) {
                     AudioInputStream in = AudioSystem.getAudioInputStream(file);
                     AudioFormat baseFormat = in.getFormat();
+
                     AudioFormat targetFormat = new AudioFormat(
                         AudioFormat.Encoding.PCM_SIGNED, 
-                        baseFormat.getSampleRate(), 16, 2, 4, baseFormat.getSampleRate(), false);
-                    
+                        baseFormat.getSampleRate(),
+                        16,
+                        2,
+                        4,
+                        baseFormat.getSampleRate(),
+                        false
+                    );
+
                     AudioInputStream din = AudioSystem.getAudioInputStream(targetFormat, in);
-                    musicLine = (SourceDataLine) AudioSystem.getLine(new DataLine.Info(SourceDataLine.class, targetFormat));
+
+                    musicLine = (SourceDataLine) AudioSystem.getLine(
+                        new DataLine.Info(SourceDataLine.class, targetFormat)
+                    );
+
                     musicLine.open(targetFormat);
                     musicLine.start();
-                    
+
                     byte[] buffer = new byte[4096];
                     int nRead;
+
                     while ((nRead = din.read(buffer, 0, buffer.length)) != -1 && !stopMusic) {
                         musicLine.write(buffer, 0, nRead);
                     }
+
                     SourceDataLine line = musicLine;
                     if (line != null) {
                         try {
@@ -46,10 +62,14 @@ public class SoundPlayer {
                             musicLine = null;
                         }
                     }
+
                     din.close();
                 }
-            } catch (Exception e) {e.printStackTrace();}
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
+
         musicThread.setDaemon(true);
         musicThread.start();
     }
@@ -58,24 +78,41 @@ public class SoundPlayer {
         new Thread(() -> {
             try {
                 File file = new File(filePath);
+
                 AudioInputStream in = AudioSystem.getAudioInputStream(file);
                 AudioFormat targetFormat = new AudioFormat(
-                    AudioFormat.Encoding.PCM_SIGNED, in.getFormat().getSampleRate(), 16, 2, 4, in.getFormat().getSampleRate(), false);
+                    AudioFormat.Encoding.PCM_SIGNED,
+                    in.getFormat().getSampleRate(),
+                    16,
+                    2,
+                    4,
+                    in.getFormat().getSampleRate(),
+                    false
+                );
+
                 AudioInputStream din = AudioSystem.getAudioInputStream(targetFormat, in);
-                
-                SourceDataLine line = (SourceDataLine) AudioSystem.getLine(new DataLine.Info(SourceDataLine.class, targetFormat));
+
+                SourceDataLine line = (SourceDataLine) AudioSystem.getLine(
+                    new DataLine.Info(SourceDataLine.class, targetFormat)
+                );
+
                 sfxLine = line;
-                
+
                 line.open(targetFormat);
                 line.start();
-                
+
                 byte[] buffer = new byte[4096];
                 int n;
+
                 while ((n = din.read(buffer, 0, buffer.length)) != -1) {
                     line.write(buffer, 0, n);
                 }
-                line.drain(); 
+
+                line.drain();
                 line.close();
+                din.close();
+                in.close();
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -84,19 +121,33 @@ public class SoundPlayer {
 
     public void stop() {
         stopMusic = true; 
-        
-        // Stop background line
+
         if (musicLine != null) {
-            try { musicLine.stop(); musicLine.flush(); musicLine.close(); } catch (Exception e) {e.printStackTrace();}
+            try {
+                musicLine.stop();
+                musicLine.flush();
+                musicLine.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             musicLine = null;
         }
-        
-        // Stop SFX line
+
         if (sfxLine != null) {
-            try { sfxLine.stop(); sfxLine.flush(); sfxLine.close(); } catch (Exception e) {}
+            try {
+                sfxLine.stop();
+                sfxLine.flush();
+                sfxLine.close();
+            } catch (Exception e) {}
             sfxLine = null;
         }
 
-        if (musicThread != null) musicThread.interrupt();
+        if (musicThread != null) {
+            musicThread.interrupt();
+        }
+    }
+
+    public void stopAll() {
+        stop();
     }
 }
