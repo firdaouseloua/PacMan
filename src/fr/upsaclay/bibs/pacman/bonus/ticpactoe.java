@@ -150,7 +150,7 @@ public class ticpactoe extends JDialog {
     private void endGame() {
         gameOver = true;
         timer.stop();
-        Timer exitTimer = new Timer(2000, e -> dispose());
+        Timer exitTimer = new Timer(1000, e -> dispose());
         exitTimer.setRepeats(false);
         exitTimer.start();
     }
