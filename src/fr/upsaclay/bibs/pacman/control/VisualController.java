@@ -137,17 +137,31 @@ public class VisualController extends SimpleController {
                         view.update();
                     } 
                     else if (duel.isShowdownDraw()) {
-                        if (getBoard().getLevel() < 5) { // HO MY LORD PRAY GACHA GOD FOR THIS
+                        if (getBoard().getLevel() < 5) { 
                             getBoard().setNumberOfLives(1);
-                            getBoard().startActors();
-                            //getBoard().teleportPacManToRandomEmptyTile();
                             getBoard().getSoundPlayer().play("resources/sounds/powerUp.wav");
+                            showdownOpened = false;
+                            super.initializeNewGame();
+                            //getBoard().teleportPacManToRandomEmptyTile();
                             view.setLayout(PacManLayout.GAME_ON);
                             view.update();
                         }
                         else if (getBoard().getLevel() >= 5 && getBoard().getLevel() < 10) {
                             Random rand = new Random();
                             int x = rand.nextInt(2);
+                            if (x == 0) {
+                                getBoard().setNumberOfLives(1);
+                                getBoard().getSoundPlayer().play("resources/sounds/powerUp.wav");
+                                super.initializeNewGame();
+                                view.setLayout(PacManLayout.GAME_ON);
+                            }
+                            else {
+                                view.setLayout(PacManLayout.GAME_OVER);
+                            }
+                        }
+                        else if (getBoard().getLevel() >= 10) {
+                            Random rand = new Random();
+                            int x = rand.nextInt(5);
                             if (x == 0) {
                                 getBoard().setNumberOfLives(1);
                                 getBoard().getSoundPlayer().play("resources/sounds/powerUp.wav");
