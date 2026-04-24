@@ -443,8 +443,9 @@ public abstract class AbstractBoard implements Board {
                 ghost.setGhostState(GhostState.DEAD);
                 frightenedGhostsEaten++;
 
-
+                soundPlayer.stop();
                 soundPlayer.play("resources/sounds/fah.wav");
+                soundPlayer.playLoop("resources/sounds/capybara.wav");
                 /*
                 * Classic Pac-Man frightened scores:
                 */
