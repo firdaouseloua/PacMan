@@ -34,10 +34,21 @@ public class SoundPlayer {
                     while ((nRead = din.read(buffer, 0, buffer.length)) != -1 && !stopMusic) {
                         musicLine.write(buffer, 0, nRead);
                     }
-                    if (musicLine != null) { musicLine.stop(); musicLine.close(); }
+                    SourceDataLine line = musicLine;
+                    if (line != null) {
+                        try {
+                            line.stop();
+                            line.flush();
+                            line.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        } finally {
+                            musicLine = null;
+                        }
+                    }
                     din.close();
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) {e.printStackTrace();}
         });
         musicThread.setDaemon(true);
         musicThread.start();
@@ -66,6 +77,7 @@ public class SoundPlayer {
                 line.drain(); 
                 line.close();
             } catch (Exception e) {
+                e.printStackTrace();
             }
         }).start();
     }
@@ -75,7 +87,7 @@ public class SoundPlayer {
         
         // Stop background line
         if (musicLine != null) {
-            try { musicLine.stop(); musicLine.flush(); musicLine.close(); } catch (Exception e) {}
+            try { musicLine.stop(); musicLine.flush(); musicLine.close(); } catch (Exception e) {e.printStackTrace();}
             musicLine = null;
         }
         
