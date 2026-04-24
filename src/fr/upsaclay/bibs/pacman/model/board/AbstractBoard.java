@@ -292,7 +292,6 @@ public abstract class AbstractBoard implements Board {
      */
     protected void activateFrightenedMode() {
         int duration = getFrightenedDurationFrames();
-
         frightenedGhostsEaten = 0;
 
         if (duration <= 0) {
@@ -300,7 +299,6 @@ public abstract class AbstractBoard implements Board {
             for (Ghost ghost : ghosts) {
                 if (ghost.getGhostState() != GhostState.DEAD) {
                     ghost.changeGhostState(globalGhostState);
-                    updateGhostSpeed(ghost);
                 }
             }
             return;
@@ -310,7 +308,8 @@ public abstract class AbstractBoard implements Board {
 
         for (Ghost ghost : ghosts) {
             if (ghost.getGhostState() != GhostState.DEAD) {
-                ghost.changeGhostState(GhostState.FRIGHTENED);
+                ghost.setGhostState(GhostState.FRIGHTENED); 
+                ghost.reverseDirectionIntention(); 
                 updateGhostSpeed(ghost);
             }
         }
@@ -343,19 +342,19 @@ public abstract class AbstractBoard implements Board {
             if (frightenedFramesRemaining <= getFrightenedEndFrames()) {
                 for (Ghost ghost : ghosts) {
                     if (ghost.getGhostState() == GhostState.FRIGHTENED) {
-                        ghost.setGhostState(GhostState.FRIGHTENED_END);
+                        ghost.setGhostState(GhostState.FRIGHTENED_END); 
                     }
                 }
             }
 
             /*
-             * End of frightened mode:
-             * all non-dead ghosts go back to the current global state.
-             */
+            * End of frightened mode:
+            * all non-dead ghosts go back to the current global state.
+            */
             if (frightenedFramesRemaining == 0) {
                 for (Ghost ghost : ghosts) {
                     if (ghost.getGhostState() != GhostState.DEAD) {
-                        ghost.setGhostState(globalGhostState);
+                        ghost.changeGhostState(globalGhostState);
                     }
                 }
             }
@@ -419,6 +418,11 @@ public abstract class AbstractBoard implements Board {
                 }
 
             GhostState ghostState = ghost.getGhostState();
+            
+
+            if (ghostState == GhostState.DEAD) {
+            continue;
+        }
 
             /*
             * If the ghost is frightened, PacMan eats it.
@@ -427,23 +431,12 @@ public abstract class AbstractBoard implements Board {
                 ghost.setGhostState(GhostState.DEAD);
                 frightenedGhostsEaten++;
 
+
+                soundPlayer.play("resources/sounds/fah.wav");
                 /*
                 * Classic Pac-Man frightened scores:
                 */
-                switch (frightenedGhostsEaten) {
-                    case 1:
-                        score += 200;
-                        break;
-                    case 2:
-                        score += 400;
-                        break;
-                    case 3:
-                        score += 800;
-                        break;
-                    default:
-                        score += 1600;
-                        break;
-                }
+                score += (int) (200 * Math.pow(2, Math.min(frightenedGhostsEaten - 1, 3)));
 
                 continue;
             }

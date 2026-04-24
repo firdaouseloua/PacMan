@@ -521,10 +521,24 @@ private class GamePanel extends JPanel {
 
         for (Ghost ghost : board.getGhosts()) {
             if (ghost != null) {
-                String key = (ghost.getGhostState() == GhostState.FRIGHTENED || ghost.getGhostState() == GhostState.FRIGHTENED_END) 
-                                ? "FRIGHTENED_FRIGHTENED" : ghost.getGhostType().toString().toUpperCase() + "_" + ghost.getDirection().toString().toUpperCase();
-                //System.out.println(key);
-                BufferedImage img = actorTextures.get(key);
+                String key;
+                if (ghost.getGhostState() == GhostState.FRIGHTENED) {
+                    key = "FRIGHTENED_FRIGHTENED";
+                } 
+                else if (ghost.getGhostState() == GhostState.FRIGHTENED_END) {
+                    boolean blink = (System.currentTimeMillis() / 200) % 2 == 0;
+                    if (blink) {
+                        key = "FRIGHTENED_FRIGHTENED"; 
+                    } 
+                    else {
+                        key = ghost.getGhostType().toString().toUpperCase() + "_" + ghost.getDirection().toString().toUpperCase();
+                    }
+                } 
+                else {
+                    key = ghost.getGhostType().toString().toUpperCase() + "_" + ghost.getDirection().toString().toUpperCase();
+                }
+
+            BufferedImage img = actorTextures.get(key);
                 if (img != null) {
                     int drawX = ghost.getX() - (img.getWidth() / 2);
                     int drawY = ghost.getY() - (img.getHeight() / 2);

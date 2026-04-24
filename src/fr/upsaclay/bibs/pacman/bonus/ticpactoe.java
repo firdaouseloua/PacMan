@@ -7,6 +7,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -15,10 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class ticpactoe {
+public class ticpactoe extends JDialog {
     int boardwidth = 600;
     int boardheight = 650;
-    JFrame frame = new JFrame("Tic Pac Toe");
     JLabel timerLabel = new JLabel();
     JLabel textLabel = new JLabel();
     JPanel textPanel = new JPanel();
@@ -27,20 +27,24 @@ public class ticpactoe {
     String player1 = "X";
     String player2 = "O";
     String currentPlayer = player1;
-    
+
     int turns = 0;
     boolean gameOver = false;
+    private boolean pacmanWon = false;
+    private boolean draw = false;
 
     Timer timer;
     int timeLeft = 3;
 
-    void TicTacToe(){
-        frame.setSize(boardwidth, boardheight);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
-        frame.setLocationRelativeTo(null);
-        frame.setResizable(false);
-        frame.setLayout(new BorderLayout());
+    public ticpactoe(Frame owner){
+        super(owner, "Tic-Pac-Toe Showdown", true)
+
+        this.setSize(boardwidth, boardheight);
+        this.setDefaultCloseOperation(Jdialog.DISPOE_ON_CLOSE);
+        this.setVisible(true);
+        this.setLocationRelativeTo(null);
+        this.setResizable(false);
+        this.setLayout(new BorderLayout());
 
         textLabel.setBackground(new Color(0xFF2121FF));
         textLabel.setForeground(Color.YELLOW);
@@ -59,11 +63,11 @@ public class ticpactoe {
         textPanel.setLayout(new BorderLayout());
         textPanel.add(textLabel);
         textPanel.add(timerLabel, BorderLayout.SOUTH);
-        frame.add(textPanel, BorderLayout.NORTH);
+        this.add(textPanel, BorderLayout.NORTH);
 
         BoardPanel.setLayout(new GridLayout(3, 3));
         BoardPanel.setBackground(new Color(0xFF2121FF));
-        frame.add(BoardPanel, BorderLayout.CENTER);
+        this.add(BoardPanel, BorderLayout.CENTER);
 
 
         timer = new Timer(1000, new ActionListener() {
@@ -129,6 +133,22 @@ public class ticpactoe {
         }
     }
 
+    public boolean isPacmanWon() {
+        return pacmanWon;
+    }
+
+    public boolean isShowdownDraw(){
+        return draw;
+    }
+
+    private void endGame() {
+        gameOver = true;
+        timer.stop();
+        Timer exitTimer = new Timer(2000, e -> dispose());
+        exitTimer.setRepeats(false);
+        exitTimer.start();
+    }
+
     void playRandomMove() {
         if (gameOver) {
             return;
@@ -162,13 +182,20 @@ public class ticpactoe {
         tile.setBackground(new Color(0xFF2121FF));
         tile.setForeground(new Color(0xFFFFFF00));
         textLabel.setText(currentPlayer + " WoN !");
+
+        if (currentPlayer.equals(player1)) {
+            pacmanWon = true;
+        }
     }
     
     void setTie(JButton tile) {
         textLabel.setText("It's a draw?! or is it...");
         tile.setBackground(new Color(0xFF2121FF));
         tile.setForeground(new Color(0xFFFF0000));
+        draw = true;
     }
+
+
 
     void checkGameOver() {
         // Horizontal check
@@ -179,7 +206,7 @@ public class ticpactoe {
                     for (int j = 0; j < 3; j++) {
                         setWinnerTile(board[i][j] );
                     }
-                    gameOver = true;
+                    endGame();
                     return;
             }
         }
@@ -191,7 +218,7 @@ public class ticpactoe {
                     for (int i = 0; i < 3; i++) {
                         setWinnerTile(board[i][j] );
                     }
-                    gameOver = true;
+                    endGame();
                     return;
             }
         }
@@ -202,7 +229,7 @@ public class ticpactoe {
                 for (int i = 0; i < 3; i++) {
                     setWinnerTile(board[i][i]);
                 }
-                gameOver = true;
+                endGame();
                 return;
         }
         if (board[0][2].getText()==board[1][1].getText() && 
@@ -211,7 +238,7 @@ public class ticpactoe {
                 setWinnerTile(board[0][2]);
                 setWinnerTile(board[1][1]);
                 setWinnerTile(board[2][0]);
-                gameOver = true;
+                endGame();
                 return;
             }
 
@@ -221,7 +248,7 @@ public class ticpactoe {
                     setTie(board[i][j]);
                 }
             }
-            gameOver = true;
+            endGame();
         }
     }
 }

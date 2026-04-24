@@ -97,7 +97,9 @@ public abstract class AbstractActor implements Actor {
 
     @Override
     public TilePosition getCurrentTile() {
-        return getMaze().getTilePosition(x, y);
+        int centerX = x + (Maze.TILE_WIDTH / 2);
+        int centerY = y + (Maze.TILE_WIDTH / 2);
+        return getMaze().getTilePosition(centerX, centerY);
     }
 
     @Override

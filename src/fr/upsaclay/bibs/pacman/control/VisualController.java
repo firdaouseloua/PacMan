@@ -1,6 +1,9 @@
 package fr.upsaclay.bibs.pacman.control;
 
+import javax.swing.JFrame;
+import fr.upsaclay.bibs.pacman.bonus.ticpactoe;
 import fr.upsaclay.bibs.pacman.PacManException;
+import fr.upsaclay.bibs.pacman.bonus.ticpactoe;
 import fr.upsaclay.bibs.pacman.model.board.BoardState;
 import fr.upsaclay.bibs.pacman.view.BasicPacManView;
 import fr.upsaclay.bibs.pacman.view.PacManLayout;
@@ -111,8 +114,19 @@ public class VisualController extends SimpleController {
                     break;
 
                 case GAME_OVER:
-                    view.setLayout(PacManLayout.GAME_OVER);
-                    view.update();
+                    getBoard().getSoundPlayer().stop();
+                    ticpactoe duel = new ticpactoe(view instanceof JFrame ? (JFrame)view : null);
+                    duel.setVisible(true);
+                    if (duel.isPacmanWon()) {
+                        getBoard().setNumberOfLives(1); // PACMAN WON ?? LET HIM COOK 1 MORE TIME
+                        try {
+                            this.receiveAction(GameAction.NEW_GAME); 
+                        } catch (PacManException e) {}
+                    } 
+                    else {
+                        view.setLayout(PacManLayout.GAME_OVER);
+                        view.update();
+                    }
                     break;
 
                 default:
