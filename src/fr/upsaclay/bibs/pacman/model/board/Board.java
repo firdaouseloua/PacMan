@@ -311,4 +311,5 @@ public interface Board {
     List<BoardEvent> getCurrentEvents();
 
     SoundPlayer getSoundPlayer();
+
 }

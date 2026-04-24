@@ -106,40 +106,38 @@ public abstract class AbstractGhost extends AbstractActor implements Ghost {
         }
 
         /*
-        * Si le ghost est au centre d'une case au début du frame,
-        * on applique d'abord l'intention précédente,
-        * puis on calcule la suivante.
+        * At the center of a tile, the ghost applies the intention computed
+        * during the previous decision point.
         */
         if (isAtTileCenter()) {
             if (intention != null) {
                 direction = intention;
             }
-            intention = computeNextIntention();
         }
 
         double oldRealX = realX;
         double oldRealY = realY;
 
-        /*
-        * On avance une seule fois.
-        */
         tryMoveForward();
 
         /*
-        * Si vitesse > 1 et qu'on a sauté le centre,
-        * on recale sur le centre puis on met à jour l'intention.
+        * If speed > 1, the ghost may jump over the center.
+        * We snap it back to the center to make direction choices stable.
         */
         if (speed > 1.0 && hasCrossedCenter(direction, oldRealX, oldRealY)) {
             snapToTileCenter(direction, oldRealX, oldRealY);
+        }
 
-            if (intention != null) {
-                direction = intention;
-            }
+        /*
+        * After moving, if the ghost is now at a tile center,
+        * compute the next intention for the next tile.
+        */
+        if (isAtTileCenter()) {
             intention = computeNextIntention();
         }
 
         /*
-        * Ghost mort arrivé à l'entrée de la pen.
+        * Dead ghost reached the pen entrance.
         */
         if (ghostState == GhostState.DEAD
                 && ghostPenState == GhostPenState.OUT
@@ -166,6 +164,10 @@ public abstract class AbstractGhost extends AbstractActor implements Ghost {
     protected void moveInsideOrAroundPen() {
         switch (ghostPenState) {
             case IN:
+                if (stopTime > 0) {
+                    stopTime--;
+                    break;
+                }
                 if (!hasDotCounter() || getDotCounter().hasReachedLimit()) {
                     ghostPenState = GhostPenState.GET_OUT;
                     setSpeed(board.getTunnelGhostSpeed());
@@ -201,7 +203,10 @@ public abstract class AbstractGhost extends AbstractActor implements Ghost {
                  */
                 if (x == board.penGhostXPosition(ghostType) && y == board.penGhostYPosition(ghostType)) {
                     ghostPenState = GhostPenState.IN;
-
+                    if (dotCounter != null) {
+                        dotCounter.reset();
+                    }
+                    setStopTime(180); // 3 secondes à 60 fps
                     /*
                      * After returning to the pen, the ghost goes back
                      * to the board's global gameplay state later.
@@ -315,6 +320,31 @@ public abstract class AbstractGhost extends AbstractActor implements Ghost {
             if (distance < bestDistance) {
                 bestDistance = distance;
                 bestDirection = dir;
+            }
+        }
+
+        /*
+        * Second pass: if the ghost has no choice, allow reversing.
+        */
+        if (bestDirection == null) {
+            for (Direction dir : priorityOrder) {
+                if (dir == Direction.UP && !currentTileType.ghostCanGoUp()) {
+                    continue;
+                }
+
+                TilePosition candidateTile = getMaze().getNeighbourTilePosition(current, dir);
+                Tile candidateType = getMaze().getTile(candidateTile);
+
+                if (candidateType.isWall()) {
+                    continue;
+                }
+
+                double distance = squaredDistance(candidateTile, target);
+
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestDirection = dir;
+                }
             }
         }
 

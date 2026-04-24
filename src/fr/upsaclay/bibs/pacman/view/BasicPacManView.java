@@ -42,6 +42,8 @@ import fr.upsaclay.bibs.pacman.model.board.Board;
 import fr.upsaclay.bibs.pacman.model.board.BoardState;
 import fr.upsaclay.bibs.pacman.model.maze.Maze;
 import fr.upsaclay.bibs.pacman.model.maze.Tile;
+import fr.upsaclay.bibs.pacman.model.actors.Bonus;
+import fr.upsaclay.bibs.pacman.model.actors.BonusType;
 
 
 public class BasicPacManView extends JFrame implements PacManView {
@@ -247,7 +249,9 @@ public class BasicPacManView extends JFrame implements PacManView {
             return;
         }
         try {
-            controller.receiveAction(GameAction.NEXT_FRAME);
+            if (board != null && board.getBoardState() == BoardState.STARTED) {
+                controller.receiveAction(GameAction.NEXT_FRAME);
+            }
 
         if (board != null) {
                     BoardState currentState = board.getBoardState();
@@ -520,6 +524,71 @@ private class GamePanel extends JPanel {
             }
         }
 
+        Bonus bonus = board.getCurrentBonus();
+
+        if (bonus != null && bonus.isActive()) {
+            int bx = bonus.getX();
+            int by = bonus.getY();
+
+            switch (bonus.getBonusType()) {
+                case CHERRY:
+                    g2d.setColor(Color.RED);
+                    g2d.fillOval(bx - 5, by - 4, 6, 6);
+                    g2d.fillOval(bx, by - 4, 6, 6);
+                    g2d.setColor(Color.GREEN);
+                    g2d.drawLine(bx, by - 4, bx + 3, by - 9);
+                    break;
+
+                case STRAWBERRY:
+                    g2d.setColor(Color.RED);
+                    g2d.fillOval(bx - 5, by - 5, 10, 10);
+                    g2d.setColor(Color.GREEN);
+                    g2d.fillRect(bx - 2, by - 8, 4, 3);
+                    break;
+
+                case PEACH:
+                    g2d.setColor(new Color(0xFFFFB070));
+                    g2d.fillOval(bx - 6, by - 6, 12, 12);
+                    break;
+
+                case APPLE:
+                    g2d.setColor(Color.RED);
+                    g2d.fillOval(bx - 6, by - 6, 12, 12);
+                    g2d.setColor(Color.GREEN);
+                    g2d.fillRect(bx - 1, by - 9, 3, 4);
+                    break;
+
+                case GRAPES:
+                    g2d.setColor(new Color(0xAA55FF));
+                    g2d.fillOval(bx - 5, by - 5, 5, 5);
+                    g2d.fillOval(bx, by - 5, 5, 5);
+                    g2d.fillOval(bx - 2, by, 5, 5);
+                    break;
+
+                case GALAXIAN:
+                    g2d.setColor(Color.YELLOW);
+                    g2d.fillPolygon(
+                        new int[]{bx, bx - 7, bx + 7},
+                        new int[]{by - 7, by + 6, by + 6},
+                        3
+                    );
+                    break;
+
+                case BELL:
+                    g2d.setColor(Color.YELLOW);
+                    g2d.fillArc(bx - 6, by - 6, 12, 12, 0, 180);
+                    g2d.fillRect(bx - 6, by, 12, 5);
+                    break;
+
+                case KEY:
+                    g2d.setColor(Color.YELLOW);
+                    g2d.fillOval(bx - 7, by - 3, 6, 6);
+                    g2d.fillRect(bx - 1, by - 1, 10, 2);
+                    g2d.fillRect(bx + 5, by - 1, 2, 5);
+                    break;
+            }
+        }
+
         for (Ghost ghost : board.getGhosts()) {
             if (ghost != null) {
                 String key;
@@ -570,17 +639,14 @@ private class GamePanel extends JPanel {
         int y = 15;
         g.drawString(status, x, y);
 
-        g.setColor(Color.YELLOW);
-        String life = "Lives left: " + (board != null ? board.getNumberOfLives() : 0);
-        g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
-        int x_life = 7;
-        int y_life = 9;
-        g.drawString(life, x_life, y_life);
+        drawLives(g, 7, 10);
 
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
-        String scoreText = "Current Score: " + (board != null ? board.getScore() : 0);
+        g.setColor(Color.WHITE);
+        String scoreText = "Score : " + (board != null ? board.getScore() : 0);
         int scoreX = 7;
-        int scoreY = 19;
+        int scoreY = 20;
+
         g.drawString(scoreText, scoreX, scoreY);
 
 
@@ -596,6 +662,40 @@ private class GamePanel extends JPanel {
         g.setPaint(levelGradient);
         g.drawString(level, levelX, levelY);
     }
+
+    private void drawLives(Graphics2D g, int startX, int y) {
+    if (board == null) return;
+
+    int remainingLives = board.getNumberOfLives() + 1;
+    int maxLives = 3;
+
+    g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
+    g.setColor(Color.YELLOW);
+    String label = "Lives Left :";
+    g.drawString(label, startX, y);
+
+    FontMetrics fm = g.getFontMetrics();
+    int x = startX + fm.stringWidth(label) + 5;
+
+    g.setFont(new Font("Dialog", Font.BOLD, 7));
+
+    for (int i = 0; i < maxLives; i++) {
+        int hx = x + i * 8;
+
+        if (i < remainingLives) {
+            g.setColor(Color.RED);
+            g.drawString("♥", hx, y);
+        } else {
+            g.setColor(Color.GRAY);
+            g.drawString("♥", hx, y);
+
+            // cassure du cœur
+            g.setColor(Color.BLACK);
+            g.drawLine(hx + 2, y - 6, hx + 4, y - 3);
+            g.drawLine(hx + 4, y - 3, hx + 2, y);
+        }
+    }
+}
 
     private void drawStartPage(Graphics2D g) {
         int width = getWidth() / SCALE;
@@ -695,7 +795,7 @@ private class GamePanel extends JPanel {
         
         g.setColor(Color.WHITE);
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 12));
-        String scoreText = "Current Score: " + (board != null ? board.getScore() : 0);
+        String scoreText = "Score: " + (board != null ? board.getScore() : 0);
         fm = g.getFontMetrics();
         int scoreX = (width - fm.stringWidth(scoreText)) / 2;
         int scoreY = height / 2;

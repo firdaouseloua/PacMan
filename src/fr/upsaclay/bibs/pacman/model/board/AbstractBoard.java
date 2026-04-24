@@ -89,8 +89,15 @@ public abstract class AbstractBoard implements Board {
 
     protected SoundPlayer soundPlayer;
 
-    protected int extralife;
+    protected int extraLifeScore;
+    protected boolean extraLifeGiven;
+    protected List<BoardEvent> currentEvents;
 
+
+    protected Bonus currentBonus;
+    protected int nextBonusScore;
+    protected int bonusDurationFrames;
+    protected int bonusSpawnIndex;
 
     /**
      * Base constructor for all boards.
@@ -112,7 +119,10 @@ public abstract class AbstractBoard implements Board {
         this.boardState = BoardState.INITIAL;
         this.level = 1;
         this.numberOfLives = 2;
-        this.extralife = 0;
+        this.extraLifeScore = 10000;
+        this.extraLifeGiven = false;
+        this.currentBonus = null;
+        this.currentEvents = new ArrayList<>();
         this.random = new Random();
         this.stateTimeDisabled = false;
         this.disabledGhosts = new ArrayList<>();
@@ -123,6 +133,9 @@ public abstract class AbstractBoard implements Board {
         this.ghostStateFrameCount = 0;
         this.frightenedFramesRemaining = 0;
         this.frightenedGhostsEaten = 0;
+        this.nextBonusScore = 700;
+        this.bonusDurationFrames = 0;
+        this.bonusSpawnIndex = 0;
     }
 
     @Override
@@ -183,7 +196,8 @@ public abstract class AbstractBoard implements Board {
      */
     @Override
     public void nextFrame() {
-        if (boardState == BoardState.LEVEL_OVER || boardState == BoardState.LIFE_OVER || boardState == BoardState.GAME_OVER) {
+        currentEvents.clear();
+        if (boardState != BoardState.STARTED) {
             return;
         }
 
@@ -205,9 +219,45 @@ public abstract class AbstractBoard implements Board {
         }
 
         eatDotIfNeeded();
+        updateBonus();
+        eatBonusIfNeeded();
         updateNoDotCounterRelease();
         checkGhostCollision();
         checkLevelOver();
+        updateElroy();
+    }
+
+    protected void updateBonus() {
+        if (currentBonus == null && score >= nextBonusScore) {
+            setBonusOnBoard();
+            nextBonusScore += 1000;
+            return;
+        }
+
+        if (currentBonus != null) {
+            bonusDurationFrames--;
+
+            if (bonusDurationFrames <= 0) {
+                currentBonus = null;
+            }
+        }
+    }
+
+    protected void updateElroy() {
+        Ghost blinky = getGhost(GhostType.BLINKY);
+        if (blinky == null) {
+            return;
+        }
+
+        int remainingDots = maze.getNumberOfDots();
+
+        if (remainingDots <= getElroyDotValue(2)) {
+            blinky.setElroy(2);
+        } else if (remainingDots <= getElroyDotValue(1)) {
+            blinky.setElroy(1);
+        } else {
+            blinky.setElroy(0);
+        }
     }
 
     @Override
@@ -266,7 +316,8 @@ public abstract class AbstractBoard implements Board {
          */
         if (tile.hasBigDot()) {
             score += 50;
-            setExtraLifeScore(score);
+            currentEvents.add(new BoardEvent(BoardEventType.EAT_BIG_DOT, pos, 50));
+            checkExtraLife();
             pacMan.setStopTime(3);
             /*
              * Big dot triggers frightened mode.
@@ -274,7 +325,8 @@ public abstract class AbstractBoard implements Board {
             activateFrightenedMode();
         } else {
             score += 10;
-            setExtraLifeScore(score);
+            currentEvents.add(new BoardEvent(BoardEventType.EAT_SMALL_DOT, pos, 10));
+            checkExtraLife();
             pacMan.setStopTime(1);
         }
 
@@ -449,8 +501,10 @@ public abstract class AbstractBoard implements Board {
                 /*
                 * Classic Pac-Man frightened scores:
                 */
-                score += (int) (200 * Math.pow(2, Math.min(frightenedGhostsEaten - 1, 3)));
-                setExtraLifeScore(score);
+                int gained = (int) (200 * Math.pow(2, Math.min(frightenedGhostsEaten - 1, 3)));
+                score += gained;
+                currentEvents.add(new BoardEvent(BoardEventType.EAT_GHOST, ghost.getCurrentTile(), gained));
+                checkExtraLife();
 
                 continue;
             }
@@ -523,6 +577,10 @@ public abstract class AbstractBoard implements Board {
             return;
         }
 
+        if (ghost.getGhostType() == GhostType.BLINKY && ghost.getElroy() > 0) {
+            ghost.setSpeed(getElroyGhostSpeed(ghost.getElroy()));
+            return;
+        }
         /*
         * Otherwise ghosts use their normal level speed.
         */
@@ -573,6 +631,11 @@ public abstract class AbstractBoard implements Board {
         this.ghostStateFrameCount = 0;
         this.frightenedFramesRemaining = 0;
         this.frightenedGhostsEaten = 0;
+
+        this.currentBonus = null;
+        this.nextBonusScore = 700;
+        this.bonusDurationFrames = 0;
+        this.bonusSpawnIndex = 0;
     }
 
     @Override
@@ -907,74 +970,160 @@ public abstract class AbstractBoard implements Board {
     }
 
     protected void updateNoDotCounterRelease() {
-    if (!noDotCounter.hasReachedLimit()) {
-        return;
-    }
+        if (!noDotCounter.hasReachedLimit()) {
+            return;
+        }
 
-    Ghost inky = getGhost(GhostType.INKY);
-    Ghost clyde = getGhost(GhostType.CLYDE);
+        Ghost inky = getGhost(GhostType.INKY);
+        Ghost clyde = getGhost(GhostType.CLYDE);
 
-    if (inky != null && inky.getGhostPenState() == GhostPenState.IN) {
-        inky.setGhostPenState(GhostPenState.GET_OUT);
+        if (inky != null && inky.getGhostPenState() == GhostPenState.IN) {
+            inky.setGhostPenState(GhostPenState.GET_OUT);
+            noDotCounter.reset();
+            return;
+        }
+
+        if (clyde != null && clyde.getGhostPenState() == GhostPenState.IN) {
+            clyde.setGhostPenState(GhostPenState.GET_OUT);
+            noDotCounter.reset();
+            return;
+        }
+
         noDotCounter.reset();
-        return;
-    }
-
-    if (clyde != null && clyde.getGhostPenState() == GhostPenState.IN) {
-        clyde.setGhostPenState(GhostPenState.GET_OUT);
-        noDotCounter.reset();
-        return;
-    }
-
-    noDotCounter.reset();
     }
 
     @Override
-    public void setExtraLifeScore(int currentScore) {
-        int totalMilestonesReached = currentScore / 10000;
-        if (totalMilestonesReached > this.extralife) {
-            getExtraLifeScore();
-            this.extralife++; 
-            this.numberOfLives++;
+    public void setExtraLifeScore(int score) {
+        if (score <= 0) {
+            throw new IllegalArgumentException("Extra life score must be positive");
+        }
+        this.extraLifeScore = score;
+        this.extraLifeGiven = false;
+    }
+
+    @Override
+    public int getExtraLifeScore() {
+        return extraLifeScore;
+    }
+
+    protected void checkExtraLife() {
+        if (!extraLifeGiven && score >= extraLifeScore) {
+            numberOfLives++;
+            extraLifeGiven = true;
+            currentEvents.add(new BoardEvent(BoardEventType.EXTRA_LIFE, pacMan.getCurrentTile(), 1));
+
             if (soundPlayer != null) {
                 soundPlayer.play("resources/sounds/powerUp.wav");
             }
         }
     }
 
-    @Override
-    public int getExtraLifeScore() {
-        return this.extralife;
-    }
+    protected void eatBonusIfNeeded() {
+        if (currentBonus == null || !currentBonus.isActive()) {
+            return;
+        }
 
+        int dx = Math.abs(pacMan.getX() - currentBonus.getX());
+        int dy = Math.abs(pacMan.getY() - currentBonus.getY());
+
+        // Collision en pixels, plus permissive que la tuile exacte
+        if (dx <= 10 && dy <= 10) {
+            int value = currentBonus.getBonusType().getValue();
+            score += value;
+
+            currentEvents.add(new BoardEvent(
+                BoardEventType.EAT_BONUS,
+                currentBonus.getCurrentTile(),
+                value
+            ));
+            checkExtraLife();
+
+
+            currentBonus = null;
+        }
+    }
     @Override
     public Bonus getCurrentBonus() {
+        if (currentBonus != null && currentBonus.isActive()) {
+            return currentBonus;
+        }
         return null;
     }
 
     @Override
     public BonusType getLevelBonusType(int level) {
-        return null;
+        BonusType[] cycle = {
+            BonusType.CHERRY,
+            BonusType.STRAWBERRY,
+            BonusType.PEACH,
+            BonusType.APPLE,
+            BonusType.GRAPES,
+            BonusType.GALAXIAN,
+            BonusType.BELL,
+            BonusType.KEY
+        };
+
+        return cycle[(level - 1) % cycle.length];
     }
+
 
     @Override
     public void setBonusOnBoard() {
-        throw new UnsupportedOperationException("Not implemented before step 4");
-    }
+        BonusType[] cycle = BonusType.values();
+        BonusType type = cycle[bonusSpawnIndex % cycle.length];
 
-    @Override
-    public double getElroyGhostSpeed(int elroyNumber) {
-        return getLevelGhostSpeed();
+        int[][] positions = {
+            {112, 163}, // centre classique
+            {40, 187},  // gauche bas
+            {184, 187}, // droite bas
+            {40, 51},   // gauche haut
+            {184, 51}   // droite haut
+        };
+
+        int[] pos = positions[bonusSpawnIndex % positions.length];
+        bonusSpawnIndex++;
+
+        currentBonus = new FruitBonus(this, pos[0], pos[1], type);
+        bonusDurationFrames = 10 * 60;
     }
 
     @Override
     public int getElroyDotValue(int elroyNumber) {
+        if (elroyNumber == 1) {
+            if (level == 1) return 20;
+            if (level <= 4) return 30;
+            return 40;
+        }
+
+        if (elroyNumber == 2) {
+            if (level == 1) return 10;
+            if (level <= 4) return 15;
+            return 20;
+        }
+
         return 0;
     }
 
     @Override
     public List<BoardEvent> getCurrentEvents() {
-        return Collections.emptyList();
+        return Collections.unmodifiableList(currentEvents);
+    }
+
+    @Override
+    public double getElroyGhostSpeed(int elroyNumber) {
+        if (elroyNumber == 1) {
+            if (level == 1) return 1.0;
+            if (level <= 4) return 1.14;
+            return 1.26;
+        }
+
+        if (elroyNumber == 2) {
+            if (level == 1) return 1.14;
+            if (level <= 4) return 1.20;
+            return 1.33;
+        }
+
+        return getLevelGhostSpeed();
     }
 
     
