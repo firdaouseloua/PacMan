@@ -48,6 +48,11 @@ import fr.upsaclay.bibs.pacman.model.actors.BonusType;
 import java.awt.GridLayout;
 import javax.swing.BoxLayout;
 
+import fr.upsaclay.bibs.pacman.model.board.BoardEvent;
+import fr.upsaclay.bibs.pacman.model.board.BoardEventType;
+import java.util.ArrayList;
+import java.util.Iterator;
+
 
 public class BasicPacManView extends JFrame implements PacManView {
     private boolean endSfxPlayed = false; // a lock for sound looping purpose yes sound only... my thirteen reason why <-----
@@ -259,8 +264,8 @@ public class BasicPacManView extends JFrame implements PacManView {
 
     @Override
     public void update() {
+        gamePanel.updateFloatingTextsFromEvents();
         gamePanel.repaint();
-        updateStatusText();
     }
 
     private void updateStatusText() {
@@ -348,6 +353,23 @@ private class GamePanel extends JPanel {
     private final Map<Tile, BufferedImage> tileTextures = new EnumMap<>(Tile.class);
     private final Map<String, BufferedImage> actorTextures = new HashMap<>();
     private BufferedImage[][] gridTextures; 
+    private int lastEventFrame = -1;
+
+    private class FloatingText {
+        String text;
+        int x;
+        int y;
+        int life;
+
+        FloatingText(String text, int x, int y) {
+            this.text = text;
+            this.x = x;
+            this.y = y;
+            this.life = 60; // 1 seconde environ
+        }   
+    }
+
+    private final List<FloatingText> floatingTexts = new ArrayList<>();
 
     public GamePanel() {
         setBackground(Color.BLACK);
@@ -681,6 +703,7 @@ private class GamePanel extends JPanel {
                 }
             }
         }
+        drawFloatingTexts(g2d);
 
         if (board != null && board.getBoardState() == BoardState.LIFE_OVER) {
             drawLifeOver(g2d);
@@ -688,41 +711,107 @@ private class GamePanel extends JPanel {
 
         drawStatusText(g2d);
     }
+
+    private void updateFloatingTextsFromEvents() {
+        if (board == null) return;
+
+        for (BoardEvent event : board.getCurrentEvents()) {
+            if (event == null || event.getPos() == null) continue;
+
+            if (event.getType() == BoardEventType.EAT_SMALL_DOT) {
+                continue;
+            }
+
+            String text = "+" + event.getValue();
+
+            if (event.getType() == BoardEventType.EXTRA_LIFE) {
+                text = "EXTRA LIFE!";
+            }
+
+            int x = event.getPos().getCol() * Maze.TILE_WIDTH;
+            int y = event.getPos().getLine() * Maze.TILE_HEIGHT;
+
+            floatingTexts.add(new FloatingText(text, x, y));
+        }
+    }
+
+    private void drawFloatingTexts(Graphics2D g) {
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 6));
+
+        for (FloatingText ft : floatingTexts) {
+            if (ft.text.equals("EXTRA LIFE!")) {
+                g.setColor(Color.RED);
+            } else {
+                g.setColor(Color.YELLOW);
+            }
+
+            g.drawString(ft.text, ft.x, ft.y);
+        }
+
+        Iterator<FloatingText> iterator = floatingTexts.iterator();
+        while (iterator.hasNext()) {
+            FloatingText ft = iterator.next();
+            ft.y -= 1;
+            ft.life--;
+
+            if (ft.life <= 0) {
+                iterator.remove();
+            }
+        }
+    }
     
     private void drawStatusText(Graphics2D g) {
         int width = getWidth() / SCALE;
-        int height = getHeight() / SCALE;
-        String status = getStatusText();
-        if (status == null || status.isEmpty()) {
-            return;
-        }
-        g.setColor(Color.YELLOW);
-        g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
-        FontMetrics fm = g.getFontMetrics();
-        int x = width - fm.stringWidth(status) - 5;
-        int y = 15;
-        g.drawString(status, x, y);
 
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
+
+        // Status en haut à droite
+        String status = getStatusText();
+        if (status != null && !status.isEmpty()) {
+            g.setColor(Color.YELLOW);
+            FontMetrics fm = g.getFontMetrics();
+
+            int statusX = width - fm.stringWidth(status) - 7;
+            int statusY = 10;
+
+            g.drawString(status, statusX, statusY);
+        }
+
+        // Lives en haut à gauche
         drawLives(g, 7, 10);
 
+        // Score à gauche sous les vies
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
         g.setColor(Color.WHITE);
+
         String scoreText = "Score : " + (board != null ? board.getScore() : 0);
-        int scoreX = 7;
-        int scoreY = 20;
+        g.drawString(scoreText, 7, 20);
 
-        g.drawString(scoreText, scoreX, scoreY);
+        // High Score à droite sous le status
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
+        g.setColor(Color.YELLOW);
 
+        String highScoreText = "High Score : " + (board != null ? board.getHighScore() : 0);
+        FontMetrics highFm = g.getFontMetrics();
 
+        int highScoreX = width - highFm.stringWidth(highScoreText) - 7;
+        int highScoreY = 20;
+
+        g.drawString(highScoreText, highScoreX, highScoreY);
+
+        // Level au centre
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 8));
         String level = "Level " + (board != null ? board.getLevel() : 0);
-        FontMetrics fm_level = g.getFontMetrics();
-        int levelX = (width - fm_level.stringWidth(level))/2;
+        FontMetrics fmLevel = g.getFontMetrics();
+
+        int levelX = (width - fmLevel.stringWidth(level)) / 2;
         int levelY = 15;
 
         GradientPaint levelGradient = new GradientPaint(
-        levelX + fm_level.stringWidth(level), levelY - fm_level.getAscent() , new Color(0x2121FF), 
-        levelX, levelY, new Color(0xFFFF00));
+            levelX + fmLevel.stringWidth(level), levelY - fmLevel.getAscent(), new Color(0x2121FF),
+            levelX, levelY, new Color(0xFFFF00)
+        );
+
         g.setPaint(levelGradient);
         g.drawString(level, levelX, levelY);
     }

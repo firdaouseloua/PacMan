@@ -318,7 +318,9 @@ public interface Board {
 
 
     /**
-     * Set pacman position to a random tile not containing dot
-     */
+ * Set pacman position to a random tile not containing dot
+ */
     void teleportPacManToRandomEmptyTile();
+
+    int getHighScore();
 }

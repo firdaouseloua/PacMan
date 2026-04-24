@@ -99,6 +99,8 @@ public abstract class AbstractBoard implements Board {
     protected int bonusDurationFrames;
     protected int bonusSpawnIndex;
 
+    protected static int highScore = 0;
+
     /**
      * Base constructor for all boards.
      *
@@ -143,6 +145,11 @@ public abstract class AbstractBoard implements Board {
         return soundPlayer;
     };
 
+    protected void updateHighScore() {
+    if (score > highScore) {
+        highScore = score;
+    }
+}
 
     @Override
     public abstract GameType getGameType();
@@ -179,6 +186,11 @@ public abstract class AbstractBoard implements Board {
     @Override
     public Actor getPacMan() {
         return pacMan;
+    }
+
+    @Override
+    public int getHighScore() {
+        return highScore;
     }
 
     /**
@@ -316,6 +328,7 @@ public abstract class AbstractBoard implements Board {
          */
         if (tile.hasBigDot()) {
             score += 50;
+            updateHighScore();
             currentEvents.add(new BoardEvent(BoardEventType.EAT_BIG_DOT, pos, 50));
             checkExtraLife();
             pacMan.setStopTime(3);
@@ -325,6 +338,7 @@ public abstract class AbstractBoard implements Board {
             activateFrightenedMode();
         } else {
             score += 10;
+            updateHighScore();
             currentEvents.add(new BoardEvent(BoardEventType.EAT_SMALL_DOT, pos, 10));
             checkExtraLife();
             pacMan.setStopTime(1);
@@ -503,6 +517,7 @@ public abstract class AbstractBoard implements Board {
                 */
                 int gained = (int) (200 * Math.pow(2, Math.min(frightenedGhostsEaten - 1, 3)));
                 score += gained;
+                updateHighScore();
                 currentEvents.add(new BoardEvent(BoardEventType.EAT_GHOST, ghost.getCurrentTile(), gained));
                 checkExtraLife();
 
@@ -1030,6 +1045,7 @@ public abstract class AbstractBoard implements Board {
         if (dx <= 10 && dy <= 10) {
             int value = currentBonus.getBonusType().getValue();
             score += value;
+            updateHighScore();
 
             currentEvents.add(new BoardEvent(
                 BoardEventType.EAT_BONUS,
