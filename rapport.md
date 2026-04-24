@@ -104,7 +104,7 @@ Des erreurs très faibles (comme un décalage de quelques pixels) pouvaient prov
 
 Nous avons aussi rencontré des difficultés dans la gestion des états des fantômes (frightened, dead, scatter…), car cela implique plusieurs transitions en même temps.
 
-Enfin, la synchronisation entre la logique du jeu et l’affichage (timer, repaint, événements) a demandé plusieurs ajustements pour obtenir un rendu fluide.
+Enfin, la synchronisation entre la logique du jeu et l’affichage (timer, repaint, événements) a demandé plusieurs ajustements pour obtenir un rendu fluide et cela s'est complexifié avec la liaison entre le ticpactoe qui nécessite de bien ajuster l'affichage de sa fenêtre par rapport puis de pouvoir fairer la liaison avec le jeu pacman.
 
 ## Conclusion
 
