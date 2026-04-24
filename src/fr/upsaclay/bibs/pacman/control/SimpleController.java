@@ -102,6 +102,12 @@ public class SimpleController implements Controller {
          */
         if (state == BoardState.LIFE_OVER) {
             if (action == GameAction.NEW_GAME) {
+                board.initializeNewLife();
+                gameStarted = false;
+                paused = false;
+                return;
+            }
+            if (action == GameAction.NEW_GAME) {
                 initializeNewGame();
                 return;
             }

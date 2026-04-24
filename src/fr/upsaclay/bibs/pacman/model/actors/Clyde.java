@@ -2,6 +2,7 @@ package fr.upsaclay.bibs.pacman.model.actors;
 
 import fr.upsaclay.bibs.pacman.model.Direction;
 import fr.upsaclay.bibs.pacman.model.board.Board;
+import fr.upsaclay.bibs.pacman.model.board.Counter;
 import fr.upsaclay.bibs.pacman.model.maze.TilePosition;
 
 /**
@@ -20,6 +21,16 @@ public class Clyde extends AbstractGhost {
      */
     public Clyde(Board board, int startX, int startY) {
         super(board, startX, startY, Direction.LEFT, GhostType.CLYDE);
+        int level = board.getLevel();
+        int limit;
+        if (level == 1) {
+            limit = 60;
+        } else if (level == 2) {
+            limit = 50;
+        } else {
+            limit = 0;
+        }
+        this.dotCounter = new Counter(limit);
     }
 
     /**
@@ -29,29 +40,38 @@ public class Clyde extends AbstractGhost {
      */
     @Override
     public TilePosition getTarget() {
-        TilePosition pacTile = getBoard().getPacMan().getCurrentTile();
-        TilePosition myTile = getCurrentTile();
+        switch (ghostState) {
+            case CHASE:
+                TilePosition pacTile = getBoard().getPacMan().getCurrentTile();
+                TilePosition myTile = getCurrentTile();
 
-        int dLine = myTile.getLine() - pacTile.getLine();
-        int dCol = myTile.getCol() - pacTile.getCol();
-        double squaredDistance = dLine * dLine + dCol * dCol;
+                int dLine = myTile.getLine() - pacTile.getLine();
+                int dCol = myTile.getCol() - pacTile.getCol();
+                int squaredDistance = dLine * dLine + dCol * dCol;
 
-        /*
-         * Threshold: 8 tiles.
-         * Using squared distance avoids sqrt: 8^2 = 64
-         */
-        if (squaredDistance < 64) {
-            return getScatterTarget();
+                if (squaredDistance <= 64) {
+                    return new TilePosition(34, 0);
+                }
+
+                return pacTile;
+
+            case SCATTER:
+                return new TilePosition(34, 0);
+
+            case FRIGHTENED:
+            case FRIGHTENED_END:
+                return null;
+
+            case DEAD:
+                return getBoard().penEntry();
+
+            default:
+                return null;
         }
-
-        return pacTile;
     }
 
-    /**
-     * Clyde's scatter target is usually the bottom-left corner.
-     */
     @Override
     protected TilePosition getScatterTarget() {
-        return new TilePosition(getMaze().getHeight() - 1, 0);
+        return new TilePosition(34, 0);
     }
 }

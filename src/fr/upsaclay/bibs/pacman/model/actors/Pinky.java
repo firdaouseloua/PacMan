@@ -2,6 +2,7 @@ package fr.upsaclay.bibs.pacman.model.actors;
 
 import fr.upsaclay.bibs.pacman.model.Direction;
 import fr.upsaclay.bibs.pacman.model.board.Board;
+import fr.upsaclay.bibs.pacman.model.board.Counter;
 import fr.upsaclay.bibs.pacman.model.maze.TilePosition;
 
 /**
@@ -12,12 +13,13 @@ import fr.upsaclay.bibs.pacman.model.maze.TilePosition;
  * 4 tiles ahead of PacMan in PacMan's current direction.
  */
 public class Pinky extends AbstractGhost {
-
+    
     /**
      * Creates Pinky at its initial position inside the pen.
      */
     public Pinky(Board board, int startX, int startY) {
         super(board, startX, startY, Direction.LEFT, GhostType.PINKY);
+        this.dotCounter = new Counter(0);
     }
 
     /**
@@ -26,20 +28,42 @@ public class Pinky extends AbstractGhost {
      */
     @Override
     public TilePosition getTarget() {
-        TilePosition pacTile = getBoard().getPacMan().getCurrentTile();
-        Direction pacDir = getBoard().getPacMan().getDirection();
+        switch (ghostState) {
+            case CHASE:
+                TilePosition pacTile = getBoard().getPacMan().getCurrentTile();
+                Direction pacDir = getBoard().getPacMan().getDirection();
 
-        int line = pacTile.getLine();
-        int col = pacTile.getCol();
+                int line = pacTile.getLine();
+                int col = pacTile.getCol();
 
-        line += 4 * pacDir.getDy();
-        col += 4 * pacDir.getDx();
+                if (pacDir == Direction.UP) {
+                    line -= 4;
+                    col -= 4;
+                } else {
+                    line += 4 * pacDir.getDy();
+                    col += 4 * pacDir.getDx();
+                }
 
-        return new TilePosition(line, col);
+                return new TilePosition(line, col);
+
+            case SCATTER:
+                return new TilePosition(0, 2);
+
+            case FRIGHTENED:
+            case FRIGHTENED_END:
+                return null;
+
+            case DEAD:
+                return getBoard().penEntry();
+
+            default:
+                return null;
+        }
     }
+
 
     @Override
     protected TilePosition getScatterTarget() {
-        return new TilePosition(0, 0);
+        return new TilePosition(0, 2);
     }
 }

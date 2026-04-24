@@ -44,7 +44,8 @@ public class ClassicBoard extends AbstractBoard {
             this.maze = Maze.loadFromFile("resources/maze.txt");
             // Initial PacMan position from the statement/tests
             this.pacMan = new PacMan(this, 112, 211);
-
+            pacMan.setSpeed(getLevelPacManSpeed());
+            noDotCounter = new Counter(getNoDotCounterLimit());
             this.ghosts.clear();
             this.boardState = BoardState.INITIAL;
 

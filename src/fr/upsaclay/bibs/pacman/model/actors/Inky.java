@@ -2,6 +2,7 @@ package fr.upsaclay.bibs.pacman.model.actors;
 
 import fr.upsaclay.bibs.pacman.model.Direction;
 import fr.upsaclay.bibs.pacman.model.board.Board;
+import fr.upsaclay.bibs.pacman.model.board.Counter;
 import fr.upsaclay.bibs.pacman.model.maze.TilePosition;
 
 /**
@@ -19,6 +20,8 @@ public class Inky extends AbstractGhost {
      */
     public Inky(Board board, int startX, int startY) {
         super(board, startX, startY, Direction.LEFT, GhostType.INKY);
+        int limit = (board.getLevel() == 1) ? 30 : 0;
+        this.dotCounter = new Counter(limit);
     }
 
     /**
@@ -27,27 +30,51 @@ public class Inky extends AbstractGhost {
      */
     @Override
     public TilePosition getTarget() {
-        TilePosition pacTile = getBoard().getPacMan().getCurrentTile();
-        Direction pacDir = getBoard().getPacMan().getDirection();
+        switch (ghostState) {
+            case CHASE:
+                TilePosition pacTile = getBoard().getPacMan().getCurrentTile();
+                Direction pacDir = getBoard().getPacMan().getDirection();
 
-        int intermediateLine = pacTile.getLine() + 2 * pacDir.getDy();
-        int intermediateCol = pacTile.getCol() + 2 * pacDir.getDx();
+                int intermediateLine = pacTile.getLine();
+                int intermediateCol = pacTile.getCol();
 
-        Ghost blinky = getBoard().getGhost(GhostType.BLINKY);
-        if (blinky == null) {
-            return new TilePosition(intermediateLine, intermediateCol);
+                if (pacDir == Direction.UP) {
+                    intermediateLine -= 2;
+                    intermediateCol -= 2;
+                } else {
+                    intermediateLine += 2 * pacDir.getDy();
+                    intermediateCol += 2 * pacDir.getDx();
+                }
+
+                Ghost blinky = getBoard().getGhost(GhostType.BLINKY);
+                if (blinky == null) {
+                    return new TilePosition(intermediateLine, intermediateCol);
+                }
+
+                TilePosition blinkyTile = blinky.getCurrentTile();
+
+                int targetLine = intermediateLine + (intermediateLine - blinkyTile.getLine());
+                int targetCol = intermediateCol + (intermediateCol - blinkyTile.getCol());
+
+                return new TilePosition(targetLine, targetCol);
+
+            case SCATTER:
+                return new TilePosition(34, 27);
+
+            case FRIGHTENED:
+            case FRIGHTENED_END:
+                return null;
+
+            case DEAD:
+                return getBoard().penEntry();
+
+            default:
+                return null;
         }
-
-        TilePosition blinkyTile = blinky.getCurrentTile();
-
-        int targetLine = intermediateLine + (intermediateLine - blinkyTile.getLine());
-        int targetCol = intermediateCol + (intermediateCol - blinkyTile.getCol());
-
-        return new TilePosition(targetLine, targetCol);
     }
 
     @Override
     protected TilePosition getScatterTarget() {
-        return new TilePosition(getMaze().getHeight() - 1, getMaze().getWidth() - 1);
+        return new TilePosition(34, 27);
     }
 }
