@@ -1141,32 +1141,42 @@ public abstract class AbstractBoard implements Board {
 
         return getLevelGhostSpeed();
     }
-
-    public void teleportPacManToRandomEmptyTile() {
-        List<TilePosition> emptyTile = new ArrayList<>();
+public void teleportPacManToRandomEmptyTile() {
+        List<TilePosition> validTiles = new ArrayList<>();
         Maze maze = getMaze();
 
         for (int row = 0; row < maze.getHeight(); row++) {
             for (int col = 0; col < maze.getWidth(); col++) {
+                
                 if (maze.getTile(row, col) == Tile.EE) {
-                    boolean isInsidePen = (row >= 13 && row <= 16 && col >= 9 && col <= 16);
-                    boolean isOuterVoid = (row <= 2 || row >= 34);
-                    boolean isSideTunnelVoid = (col <= 5 || col >= 22) && (row >= 12 && row <= 22);
-                    if (!isInsidePen && !isOuterVoid && !isSideTunnelVoid) {
-                    emptyTile.add(new TilePosition(row, col));
-                }
+                    
+                    // 1. Vide supérieur et inférieur (Score et bas de map)
+                    boolean isTopBottomVoid = (row <= 2 || row >= 34);
+                    
+                    // 2. Vide extérieur (les EE derrière les tunnels sur les bords)
+                    boolean isSideVoid = (row >= 12 && row <= 22) && (col <= 4 || col >= 23);
+                    
+                    // 3. Le Pen des fantômes et la zone vide juste en dessous
+                    boolean isGhostPen = (row >= 13 && row <= 22) && (col >= 9 && col <= 18);
+
+                    // Si on n'est dans aucune zone morte, c'est un vrai couloir jouable !
+                    if (!isTopBottomVoid && !isSideVoid && !isGhostPen) {
+                        validTiles.add(new TilePosition(row, col));
+                    }
                 }
             }
         }
 
-        if (!emptyTile.isEmpty()) {
-            TilePosition target = emptyTile.get(random.nextInt(emptyTile.size()));
+        if (!validTiles.isEmpty()) {
+            TilePosition target = validTiles.get(random.nextInt(validTiles.size()));
             
-            int pixelX = target.getCol() * Maze.TILE_WIDTH + Maze.TILE_WIDTH / 2;
-            int pixelY = target.getLine() * Maze.TILE_WIDTH + Maze.TILE_WIDTH / 2;
+            // On centre parfaitement Pac-Man dans la tuile de 8x8 pixels
+            int pixelX = (target.getCol() * 8) + 4; 
+            int pixelY = (target.getLine() * 8) + 4; 
             
             getPacMan().setPosition(pixelX, pixelY);
         } else {
+            // Position de départ classique (sur les EE de la ligne 26/28 au centre)
             getPacMan().setPosition(112, 211);
         }
     }

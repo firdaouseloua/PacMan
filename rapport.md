@@ -62,7 +62,7 @@ Ces choix nous ont permis de garder une logique propre tout en ajoutant des fonc
 
 ### Tests
 
-La majorité des tests fournis passent.
+La majorité des tests fournis passent c'est à dire en réalité la partie 1 et 2.
 
 Certains tests ont nécessité des ajustements mineurs, notamment lorsque notre implémentation introduisait des comportements légèrement différents mais cohérents (par exemple dans la gestion des exceptions ou du timing des actions).
 
@@ -70,6 +70,8 @@ Nous avons parfois adapté certains tests pour autoriser des exceptions supplém
 
 En dehors de ces cas spécifiques, nous avons essayé de conserver au maximum les tests tels quels afin de garantir la compatibilité avec les attentes du projet.
 
+
+Nous avons décidé à partir de la partie 3 que nous implémeterions les mécaniques les plus accessibles en ne tenant plus compte d'une différence entre partie 3 ou 4 mais simplement d'une implémentation générale qui devrait fonctionner
 ## Organisation du travail
 
 Nous avons travaillé de manière assez flexible, en nous répartissant les tâches selon les parties du projet :

@@ -129,8 +129,9 @@ public class VisualController extends SimpleController {
                     } 
                     else if (duel.isShowdownDraw()) {
                         if (getBoard().getLevel() < 5) { // HO MY LORD PRAY GACHA GOD FOR THIS
+                            getBoard().setNumberOfLives(1);
                             getBoard().startActors();
-                            getBoard().teleportPacManToRandomEmptyTile();
+                            //getBoard().teleportPacManToRandomEmptyTile();
                             getBoard().getSoundPlayer().play("resources/sounds/powerUp.wav");
                             view.setLayout(PacManLayout.GAME_ON);
                             view.update();
