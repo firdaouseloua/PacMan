@@ -32,7 +32,7 @@ public class ticpactoe extends JDialog {
     private boolean draw = false;
 
     Timer timer;
-    int timeLeft = 3;
+    int timeLeft = 2;
 
     public ticpactoe(Frame owner, int width, int height) {
         super(owner, "Tic-Pac-Toe Showdown", true);
@@ -119,7 +119,7 @@ public class ticpactoe extends JDialog {
                             } else {
                                 currentPlayer = player1;
                                 textLabel.setText(currentPlayer + "'s turn");
-                                timeLeft = 3;
+                                timeLeft = 2;
                                 timerLabel.setText("Thiiiiiink Faaaaaahst: " + timeLeft);
                                 timer.restart();
                             }
