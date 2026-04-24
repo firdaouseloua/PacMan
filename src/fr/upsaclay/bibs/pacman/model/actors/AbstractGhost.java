@@ -25,6 +25,8 @@ public abstract class AbstractGhost extends AbstractActor implements Ghost {
     protected GhostPenState ghostPenState;
     protected Direction outOfPenDirection;
     protected int elroy;
+    protected Counter dotCounter;
+
 
     /**
      * Builds a ghost with a given board, start position, start direction and type.
@@ -42,6 +44,7 @@ public abstract class AbstractGhost extends AbstractActor implements Ghost {
         this.ghostPenState = GhostPenState.OUT;
         this.outOfPenDirection = Direction.LEFT;
         this.elroy = 0;
+        this.dotCounter = null;
     }
 
     /**
@@ -103,48 +106,28 @@ public abstract class AbstractGhost extends AbstractActor implements Ghost {
         }
 
         /*
-        * First move forward according to the current direction.
+        * Si le ghost est au centre d'une case au début du frame,
+        * on applique d'abord l'intention précédente,
+        * puis on calcule la suivante.
         */
-        double oldRealX = realX;
-        double oldRealY = realY;
-
-        tryMoveForward();
-
-        /*
-        * If the ghost is dead and has reached the pen entry area,
-        * it starts entering the pen.
-        */
-        if (ghostState == GhostState.DEAD
-                && ghostPenState == GhostPenState.OUT
-                && x == board.outPenXPosition()
-                && y == board.outPenYPosition()) {
-            ghostPenState = GhostPenState.GET_IN;
-            setSpeed(board.getTunnelGhostSpeed());
-            intention = null;
-            return;
-        }
-
         if (isAtTileCenter()) {
-            /*
-             * If an intention was already computed previously,
-             * it is now applied as the new current direction.
-             */
             if (intention != null) {
                 direction = intention;
             }
-
-            /*
-             * Once the direction is updated at the current center,
-             * we immediately compute the next intended direction
-             * for the next center the ghost will reach.
-             */
             intention = computeNextIntention();
-            return;
         }
 
+        double oldRealX = realX;
+        double oldRealY = realY;
+
         /*
-        * For speed > 1, the ghost may jump over the center without landing exactly on it.
-        * In that case we snap to the center, apply the turn, and compute the next intention.
+        * On avance une seule fois.
+        */
+        tryMoveForward();
+
+        /*
+        * Si vitesse > 1 et qu'on a sauté le centre,
+        * on recale sur le centre puis on met à jour l'intention.
         */
         if (speed > 1.0 && hasCrossedCenter(direction, oldRealX, oldRealY)) {
             snapToTileCenter(direction, oldRealX, oldRealY);
@@ -153,6 +136,18 @@ public abstract class AbstractGhost extends AbstractActor implements Ghost {
                 direction = intention;
             }
             intention = computeNextIntention();
+        }
+
+        /*
+        * Ghost mort arrivé à l'entrée de la pen.
+        */
+        if (ghostState == GhostState.DEAD
+                && ghostPenState == GhostPenState.OUT
+                && x == board.outPenXPosition()
+                && y == board.outPenYPosition()) {
+            ghostPenState = GhostPenState.GET_IN;
+            setSpeed(board.getTunnelGhostSpeed());
+            intention = null;
         }
     }
 
@@ -171,14 +166,11 @@ public abstract class AbstractGhost extends AbstractActor implements Ghost {
     protected void moveInsideOrAroundPen() {
         switch (ghostPenState) {
             case IN:
-                /*
-                 * Simplified rule:
-                 * ghosts do not wait for advanced counters yet,
-                 * they simply start leaving the pen.
-                 */
-                ghostPenState = GhostPenState.GET_OUT;
-                setSpeed(board.getTunnelGhostSpeed());
-                intention = null;
+                if (!hasDotCounter() || getDotCounter().hasReachedLimit()) {
+                    ghostPenState = GhostPenState.GET_OUT;
+                    setSpeed(board.getTunnelGhostSpeed());
+                    intention = null;
+                }
                 break;
 
             case GET_OUT:
@@ -448,20 +440,18 @@ public abstract class AbstractGhost extends AbstractActor implements Ghost {
 
         boolean shouldReverse =
             ghostPenState == GhostPenState.OUT &&
-            (
-                (previous == GhostState.CHASE || previous == GhostState.SCATTER) 
-                && (state == GhostState.CHASE 
-                    || state == GhostState.SCATTER 
-                    || state == GhostState.FRIGHTENED 
-                    || state == GhostState.FRIGHTENED_END)
-            );
+                (
+                    (previous == GhostState.CHASE && state == GhostState.SCATTER)
+                    || (previous == GhostState.SCATTER && state == GhostState.CHASE)
+                    || ((previous == GhostState.CHASE || previous == GhostState.SCATTER)
+                        && state == GhostState.FRIGHTENED)
+                );
 
         if (shouldReverse) {
             this.intention = direction.reverse();
-
         }
     }
-    
+        
 
     @Override
     public GhostState getGhostState() {
@@ -499,13 +489,14 @@ public abstract class AbstractGhost extends AbstractActor implements Ghost {
 
     @Override
     public boolean hasDotCounter() {
-        return false;
+        return dotCounter != null;
     }
 
     @Override
     public Counter getDotCounter() {
-        return null;
+        return dotCounter;
     }
+
 
     @Override
     public void setElroy(int elroy) {

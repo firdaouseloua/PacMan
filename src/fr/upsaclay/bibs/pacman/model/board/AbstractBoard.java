@@ -113,7 +113,7 @@ public abstract class AbstractBoard implements Board {
         this.random = new Random();
         this.stateTimeDisabled = false;
         this.disabledGhosts = new ArrayList<>();
-        this.noDotCounter = new Counter(Integer.MAX_VALUE);
+        this.noDotCounter = new Counter(getNoDotCounterLimit());
         this.specialDotCounter = new Counter(Integer.MAX_VALUE);
         this.soundPlayer = new SoundPlayer();
         this.globalGhostState = GhostState.CHASE;
@@ -147,6 +147,7 @@ public abstract class AbstractBoard implements Board {
             ghost.start();
         }
 
+        
         ghostStateFrameCount = 0;
         frightenedFramesRemaining = 0;
         frightenedGhostsEaten = 0;
@@ -186,7 +187,11 @@ public abstract class AbstractBoard implements Board {
         updateGhostStatesOverTime();
 
         if (pacMan != null) {
-            pacMan.setSpeed(getLevelPacManSpeed());
+            if (frightenedFramesRemaining > 0) {
+                pacMan.setSpeed(getFrightPacManSpeed());
+            } else {
+                pacMan.setSpeed(getLevelPacManSpeed());
+            }
             pacMan.nextFrame();
         }
 
@@ -197,6 +202,7 @@ public abstract class AbstractBoard implements Board {
         }
 
         eatDotIfNeeded();
+        updateNoDotCounterRelease();
         checkGhostCollision();
         checkLevelOver();
     }
@@ -273,6 +279,7 @@ public abstract class AbstractBoard implements Board {
         maze.setTile(pos, tile.clearDot());
         noDotCounter.reset();
         specialDotCounter.inc();
+        updateGhostReleaseCountersAfterDot();
     }
 
     /**
@@ -284,12 +291,27 @@ public abstract class AbstractBoard implements Board {
      * - score chain resets to 0 eaten ghosts
      */
     protected void activateFrightenedMode() {
-        frightenedFramesRemaining = getFrightenedDurationFrames();
+        int duration = getFrightenedDurationFrames();
+
         frightenedGhostsEaten = 0;
+
+        if (duration <= 0) {
+            frightenedFramesRemaining = 0;
+            for (Ghost ghost : ghosts) {
+                if (ghost.getGhostState() != GhostState.DEAD) {
+                    ghost.changeGhostState(globalGhostState);
+                    updateGhostSpeed(ghost);
+                }
+            }
+            return;
+        }
+
+        frightenedFramesRemaining = duration;
 
         for (Ghost ghost : ghosts) {
             if (ghost.getGhostState() != GhostState.DEAD) {
-                ghost.setGhostState(GhostState.FRIGHTENED);
+                ghost.changeGhostState(GhostState.FRIGHTENED);
+                updateGhostSpeed(ghost);
             }
         }
     }
@@ -505,6 +527,13 @@ public abstract class AbstractBoard implements Board {
     /**                                                                 **/
     /*********************************************************************/
 
+    protected int getNoDotCounterLimit() {
+        if (level <= 4) {
+            return 4 * 60;
+        }
+        return 3 * 60;
+    }
+
     @Override
     public int getLevel() {
         return level;
@@ -522,8 +551,12 @@ public abstract class AbstractBoard implements Board {
         int oldScore = this.score;
         int oldLives = this.numberOfLives;
 
+
         this.level = level;
         initialize();
+
+        pacMan.setSpeed(getLevelPacManSpeed());
+        noDotCounter = new Counter(getNoDotCounterLimit());
 
         this.score = oldScore;
         this.numberOfLives = oldLives;
@@ -568,6 +601,8 @@ public abstract class AbstractBoard implements Board {
         this.ghostStateFrameCount = 0;
         this.frightenedFramesRemaining = 0;
         this.frightenedGhostsEaten = 0;
+
+        noDotCounter = new Counter(getNoDotCounterLimit());
     }
 
     /**
@@ -578,7 +613,7 @@ public abstract class AbstractBoard implements Board {
     protected void resetActorsToInitialPositions() {
         if (getGameType() == GameType.CLASSIC) {
             pacMan = new PacMan(this, 112, 211);
-
+            pacMan.setSpeed(getLevelPacManSpeed());
             ghosts.clear();
 
             if (!disabledGhosts.contains(GhostType.BLINKY)) {
@@ -619,6 +654,7 @@ public abstract class AbstractBoard implements Board {
 
         } else {
             pacMan = new PacMan(this, 35, 75);
+            pacMan.setSpeed(getLevelPacManSpeed());
             ghosts.clear();
         }
     }
@@ -702,6 +738,7 @@ public abstract class AbstractBoard implements Board {
 
     @Override
     public Counter specialDotCounter() {
+        specialDotCounter.reset();
         return specialDotCounter;
     }
 
@@ -758,22 +795,46 @@ public abstract class AbstractBoard implements Board {
      * We convert seconds to frames using 60 fps.
      */
     protected int getFrightenedDurationFrames() {
-        /*
-         * Simple level-based approximation:
-         * - level 1: 6 seconds
-         * - levels 2-4: 5 seconds
-         * - higher: 3 seconds
-         */
-        if (level == 1) return 6 * 60;
-        if (level <= 4) return 5 * 60;
-        return 3 * 60;
+        switch (level) {
+            case 1: return 360;
+            case 2: return 300;
+            case 3: return 240;
+            case 4: return 180;
+            case 5: return 120;
+            case 6: return 300;
+            case 7: return 120;
+            case 8: return 120;
+            case 9: return 60;
+            case 10: return 300;
+            case 11: return 120;
+            case 12: return 60;
+            case 13: return 60;
+            case 14: return 180;
+            case 15: return 60;
+            case 16: return 60;
+            case 18: return 60;
+            default: return 0; // 17, 19+
+        }
     }
 
     /**
      * Simplified blinking duration at the end of frightened mode.
      */
     protected int getFrightenedEndFrames() {
-        return 2 * 60;
+        switch (level) {
+            case 9:
+            case 12:
+            case 13:
+            case 15:
+            case 16:
+            case 18:
+                return 90;
+            case 17:
+                return 0;
+            default:
+                if (level >= 19) return 0;
+                return 150;
+        }
     }
 
     /**
@@ -787,6 +848,77 @@ public abstract class AbstractBoard implements Board {
         }
         return 20 * 60;
     }
+
+    protected void updateGhostReleaseCountersAfterDot() {
+        Ghost pinky = getGhost(GhostType.PINKY);
+        Ghost inky = getGhost(GhostType.INKY);
+        Ghost clyde = getGhost(GhostType.CLYDE);
+
+        boolean specialMode = boardState == BoardState.STARTED && level == 1 && numberOfLives < 2;
+        // ou un bool dédié, plus propre
+
+        if (specialMode) {
+            specialDotCounter.inc();
+
+            if (specialDotCounter.getValue() == 7 && pinky != null && pinky.getGhostPenState() == GhostPenState.IN) {
+                pinky.setGhostPenState(GhostPenState.GET_OUT);
+                return;
+            }
+            if (specialDotCounter.getValue() == 17 && inky != null && inky.getGhostPenState() == GhostPenState.IN) {
+                inky.setGhostPenState(GhostPenState.GET_OUT);
+                return;
+            }
+            if (specialDotCounter.getValue() >= 32) {
+                // après ça, Clyde utilise son dotCounter normal
+                if (clyde != null && clyde.getGhostPenState() == GhostPenState.IN && clyde.hasDotCounter()) {
+                    clyde.getDotCounter().inc();
+                    if (clyde.getDotCounter().hasReachedLimit()) {
+                        clyde.setGhostPenState(GhostPenState.GET_OUT);
+                    }
+                }
+                return;
+            }
+            return;
+        }
+
+        if (inky != null && inky.getGhostPenState() == GhostPenState.IN && inky.hasDotCounter()) {
+            inky.getDotCounter().inc();
+            if (inky.getDotCounter().hasReachedLimit()) {
+                inky.setGhostPenState(GhostPenState.GET_OUT);
+                return;
+            }
+        }
+
+        if (clyde != null && clyde.getGhostPenState() == GhostPenState.IN && clyde.hasDotCounter()) {
+            clyde.getDotCounter().inc();
+            if (clyde.getDotCounter().hasReachedLimit()) {
+                clyde.setGhostPenState(GhostPenState.GET_OUT);
+            }
+        }
+    }
+
+    protected void updateNoDotCounterRelease() {
+    if (!noDotCounter.hasReachedLimit()) {
+        return;
+    }
+
+    Ghost inky = getGhost(GhostType.INKY);
+    Ghost clyde = getGhost(GhostType.CLYDE);
+
+    if (inky != null && inky.getGhostPenState() == GhostPenState.IN) {
+        inky.setGhostPenState(GhostPenState.GET_OUT);
+        noDotCounter.reset();
+        return;
+    }
+
+    if (clyde != null && clyde.getGhostPenState() == GhostPenState.IN) {
+        clyde.setGhostPenState(GhostPenState.GET_OUT);
+        noDotCounter.reset();
+        return;
+    }
+
+    noDotCounter.reset();
+}
 
     @Override
     public void setExtraLifeScore(int score) {
