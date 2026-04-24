@@ -89,6 +89,8 @@ public abstract class AbstractBoard implements Board {
 
     protected SoundPlayer soundPlayer;
 
+    protected int extralife;
+
 
     /**
      * Base constructor for all boards.
@@ -110,6 +112,7 @@ public abstract class AbstractBoard implements Board {
         this.boardState = BoardState.INITIAL;
         this.level = 1;
         this.numberOfLives = 2;
+        this.extralife = 0;
         this.random = new Random();
         this.stateTimeDisabled = false;
         this.disabledGhosts = new ArrayList<>();
@@ -293,7 +296,10 @@ public abstract class AbstractBoard implements Board {
     protected void activateFrightenedMode() {
         int duration = getFrightenedDurationFrames();
         frightenedGhostsEaten = 0;
-
+        if (soundPlayer != null) {
+            soundPlayer.stop(); 
+            soundPlayer.play("resources/sounds/capybara.wav");
+        }
         if (duration <= 0) {
             frightenedFramesRemaining = 0;
             for (Ghost ghost : ghosts) {
@@ -352,6 +358,10 @@ public abstract class AbstractBoard implements Board {
             * all non-dead ghosts go back to the current global state.
             */
             if (frightenedFramesRemaining == 0) {
+                if (soundPlayer != null) {
+                    soundPlayer.stop(); 
+                    soundPlayer.play("resources/sounds/game_main.wav"); 
+                }
                 for (Ghost ghost : ghosts) {
                     if (ghost.getGhostState() != GhostState.DEAD) {
                         ghost.changeGhostState(globalGhostState);
@@ -587,7 +597,9 @@ public abstract class AbstractBoard implements Board {
         if (numberOfLives > 0) {
             numberOfLives--;
         }
-
+        if (soundPlayer != null) {
+            soundPlayer.stop();
+        }
         resetActorsToInitialPositions();
         boardState = BoardState.INITIAL;
         this.globalGhostState = GhostState.SCATTER;
@@ -911,16 +923,24 @@ public abstract class AbstractBoard implements Board {
     }
 
     noDotCounter.reset();
-}
+    }
 
     @Override
-    public void setExtraLifeScore(int score) {
-        throw new UnsupportedOperationException("Not implemented before step 4");
+    public void setExtraLifeScore(int currentScore) {
+        int totalMilestonesReached = currentScore / 10000;
+        if (totalMilestonesReached > this.extralife) {
+            getExtraLifeScore();
+            this.extralife++; 
+            this.numberOfLives++;
+            if (soundPlayer != null) {
+                soundPlayer.play("resources/sounds/powerUp.wav");
+            }
+        }
     }
 
     @Override
     public int getExtraLifeScore() {
-        return 0;
+        return this.extralife;
     }
 
     @Override

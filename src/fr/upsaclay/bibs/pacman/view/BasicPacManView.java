@@ -191,7 +191,7 @@ public class BasicPacManView extends JFrame implements PacManView {
     @Override
     public void setLayout(PacManLayout layout) {
         setLayoutState(layout);
-        
+
     }
 
     @Override
@@ -570,10 +570,17 @@ private class GamePanel extends JPanel {
         int y = 15;
         g.drawString(status, x, y);
 
+        g.setColor(Color.YELLOW);
+        String life = "Lives left: " + (board != null ? board.getNumberOfLives() : 0);
+        g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
+        int x_life = 7;
+        int y_life = 9;
+        g.drawString(life, x_life, y_life);
+
         g.setFont(new Font("Century Schoolbook", Font.BOLD, 5));
         String scoreText = "Current Score: " + (board != null ? board.getScore() : 0);
         int scoreX = 7;
-        int scoreY = 15;
+        int scoreY = 19;
         g.drawString(scoreText, scoreX, scoreY);
 
 
