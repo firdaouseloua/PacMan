@@ -12,53 +12,67 @@ Le projet avait pour objectif de recréer le jeu PacMan en respectant au maximum
 Au-delà de l’aspect purement technique, ce projet nous a permis de mieux comprendre les mécanismes internes d’un jeu en temps réel : gestion des déplacements, des collisions, des états, mais aussi synchronisation entre la logique du jeu et l’affichage.
 
 Nous avons cherché à ne pas simplement “faire fonctionner” le jeu, mais à produire quelque chose de fluide, lisible, et agréable visuellement.
-
+ 
 ## Réalisation
 
 ### Avancement du projet
 
-Nous avons commencé par implémenter entièrement l’étape 1 en suivant les instructions fournies. Cette partie s’est globalement bien passée, même si certains comportements, notamment liés au centre des tiles et aux intentions de déplacement de PacMan, ont nécessité plusieurs ajustements.
+Nous avons commencé par implémenter l’ensemble de l’étape 1 en suivant les spécifications fournies. Cette phase concernait principalement la mise en place de la logique de base : déplacements de PacMan, gestion du labyrinthe et interactions simples.
 
-Au début, nous avions une interprétation légèrement différente du moment où PacMan devait changer de direction, ce qui entraînait des erreurs dans les tests. Après analyse, nous avons corrigé la logique en nous rapprochant du comportement attendu.
+Cette partie s’est globalement bien déroulée, mais nous avons rencontré une difficulté importante liée au changement de direction de PacMan. Initialement, nous avions une interprétation légèrement différente du moment où ce changement devait être appliqué. Cela entraînait des comportements incorrects ainsi que des échecs dans certains tests. Après analyse, nous avons compris que le changement de direction devait se faire uniquement lorsque PacMan se trouve exactement au centre d’une case, ce qui nous a permis de corriger le problème.
 
-L’étape 2 a été réalisée en parallèle avec une amélioration progressive de l’interface graphique. Cette partie a été plus intuitive, mais nous avons rencontré un problème sur le comptage des points restants dans le maze. Celui-ci provenait d’un décalage très léger (0.5 pixel) dans les déplacements de PacMan, ce qui faussait certaines conditions. Une fois identifié, le bug a été corrigé rapidement.
+L’étape 2 a été réalisée en parallèle avec l’intégration progressive de l’interface graphique. Cette étape introduisait notamment la gestion des collisions, du score et des fantômes. Un bug notable est apparu dans le comptage des points restants dans le labyrinthe. Celui-ci provenait d’un décalage très faible (de l’ordre du pixel) dans la position de PacMan, ce qui empêchait certaines conditions d’être correctement vérifiées. Une fois ce problème identifié, la correction a été rapide.
 
-Au final, le jeu est entièrement jouable avec :
+Nous avons ensuite implémenté les comportements avancés :
+
+alternance des états des fantômes (chase, scatter)
+gestion du mode frightened
+gestion des collisions PacMan/fantômes avec différents cas
+
+Enfin, nous avons ajouté :
+
+la gestion des niveaux
+l’interface complète (écran de début, pause, fin de partie)
+plusieurs améliorations visuelles
+
+À la fin du projet, le jeu est entièrement jouable avec :
 
 déplacements fluides de PacMan
-gestion des fantômes avec leurs états (chase, scatter, frightened…)
-gestion des vies, du score et des collisions
+gestion complète des fantômes et de leurs états
+gestion du score, des vies et des collisions
 transitions entre niveaux et fin de partie
 
 Nous avons également ajouté plusieurs éléments non demandés :
 
 affichage du High Score
-affichage de floating scores (points animés lorsqu’on mange un fantôme ou un bonus)
-amélioration visuelle (cœurs, textes, boutons)
-écran de fin avec boutons Play Again / Quit
+affichage de scores animés (floating scores)
+amélioration visuelle générale (cœurs, textes, overlays)
+écran de fin avec boutons interactifs (Play Again / Quit)
+ajout d’un mini-jeu (Tic-Tac-Toe) lors du Game Over
 
 ### Structure et hierarchie de classe
 
-Le projet repose sur une architecture assez claire basée sur la séparation :
+Le projet repose sur une architecture structurée suivant une séparation claire :
 
-model : logique du jeu (Board, Ghost, PacMan, Maze…)
-control : gestion des actions utilisateur
-view : affichage graphique
+model : contient la logique du jeu (Board, Ghost, PacMan, Maze…)
+control : gère les interactions et les actions utilisateur
+view : gère l’affichage graphique
 
-Nous avons principalement travaillé avec :
+Les classes principales sont :
 
-AbstractBoard : gestion globale du jeu (score, vies, états, logique principale)
-AbstractGhost : comportement commun des fantômes
-PacMan : logique spécifique du joueur
-BasicPacManView : affichage graphique complet (maze, acteurs, UI)
+AbstractBoard : cœur du jeu (score, états, logique globale, progression)
+PacMan : gestion du joueur
+Ghost et ses sous-classes : comportement des fantômes
+BasicPacManView : affichage graphique complet
+VisualController : lien entre le modèle et la vue
 
-Nous avons respecté globalement la structure proposée, mais nous avons enrichi certaines classes, notamment :
+Nous avons respecté la structure proposée, tout en l’enrichissant avec :
 
-ajout du high score dans le board
-ajout d’un système d’événements (BoardEvent) pour gérer les floating scores
-ajout de logique UI directement dans la vue pour améliorer l’expérience utilisateur
+un système de High Score
+un système d’événements (BoardEvent) pour gérer les animations de score
+des améliorations côté vue pour rendre le jeu plus dynamique
 
-Ces choix nous ont permis de garder une logique propre tout en ajoutant des fonctionnalités visuelles sans casser l’architecture existante.
+Ces ajouts ont été faits de manière à ne pas casser l’architecture existante, en conservant une bonne séparation des responsabilités.
 
 ### Tests
 
